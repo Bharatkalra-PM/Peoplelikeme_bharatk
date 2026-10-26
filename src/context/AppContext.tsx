@@ -1514,7 +1514,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const isReturningBharat =
       !isNewUser && cleanEmail === 'bharatk6325@gmail.com' && role === 'switcher';
 
-    if (role === 'admin' || cleanEmail === 'admin@peoplelikeme.app') {
+    if (role === 'admin' || cleanEmail === 'admin@peoplelikeme.app' || cleanEmail === 'admin@1234' || cleanEmail === 'admin@peoplelikeme.in') {
       const adminUser: Profile = {
         id: 'admin-1',
         role: 'admin',

@@ -86,11 +86,13 @@ export const SignUp: React.FC = () => {
       // ignore storage error
     }
 
-    const isExplicitNewSignup = authMode === 'signup' && cleanEmail !== 'bharatk6325@gmail.com';
+    const isAdminLogin = cleanEmail === 'admin@peoplelikeme.app' || cleanEmail === 'admin@1234' || cleanEmail === 'admin@peoplelikeme.in';
+    const effectiveRole = isAdminLogin ? 'admin' : role;
+    const isExplicitNewSignup = authMode === 'signup' && cleanEmail !== 'bharatk6325@gmail.com' && !isAdminLogin;
     const { targetRoute } = login(
       cleanEmail,
-      role,
-      displayName,
+      effectiveRole,
+      isAdminLogin ? 'Platform Admin' : displayName,
       isExplicitNewSignup ? true : undefined
     );
     setIsSubmitting(false);
@@ -284,11 +286,11 @@ export const SignUp: React.FC = () => {
                 <Mail className="w-4 h-4 text-[#55665F] dark:text-[#A6B8B0] absolute left-3.5 top-3" />
                 <input
                   id="signup-email"
-                  type="email"
+                  type={authMode === "signin" ? "text" : "email"}
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
+                  placeholder={authMode === "signin" ? "you@example.com or admin@1234" : "you@example.com"}
                   className="w-full pl-10 pr-3.5 py-2.5 rounded-[10px] border border-[#D3DDD8] dark:border-[#2A403C] bg-[#F1F5F2]/40 dark:bg-[#122523]/40 text-[#13231F] dark:text-[#E6EEEA] text-sm focus:bg-white dark:focus:bg-[#0E1E1D]"
                 />
               </div>
@@ -402,6 +404,24 @@ export const SignUp: React.FC = () => {
               className="px-3 py-1.5 rounded-full bg-[#102A2E] dark:bg-[#F2B134] text-white dark:text-[#102A2E] font-semibold cursor-pointer shrink-0"
             >
               Sign In →
+            </button>
+          </div>
+          <div className="p-2.5 rounded-xl bg-[#F1F5F2] dark:bg-[#122523] flex items-center justify-between gap-2">
+            <div>
+              <p className="font-semibold text-[#13231F] dark:text-[#E6EEEA]">Admin Hub & User Database</p>
+              <p className="text-[11px] text-[#55665F] dark:text-[#A6B8B0]">
+                Login: <strong>admin@peoplelikeme.app</strong> (or <strong>admin@1234</strong>) • Pass: <strong>Admin@1234</strong>
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                const { targetRoute } = login('admin@peoplelikeme.app', 'admin', 'Platform Admin', false);
+                navigate(targetRoute);
+              }}
+              className="px-3 py-1.5 rounded-full bg-[#102A2E] dark:bg-[#F2B134] text-white dark:text-[#102A2E] font-semibold cursor-pointer shrink-0"
+            >
+              Admin →
             </button>
           </div>
         </div>

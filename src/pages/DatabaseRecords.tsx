@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useApp } from '../context/AppContext';
 import {
   Database,
   RefreshCw,
@@ -99,6 +100,8 @@ CREATE TABLE user_activity_logs (
 );`;
 
 export const DatabaseRecords: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
+  const { currentUser } = useApp();
+  const navigate = useNavigate();
   const [users, setUsers] = useState<DbUserRecord[]>([]);
   const [logs, setLogs] = useState<DbActivityLog[]>([]);
   const [activeTab, setActiveTab] = useState<'users' | 'logs' | 'schema'>('users');
@@ -181,12 +184,74 @@ export const DatabaseRecords: React.FC<{ embedded?: boolean }> = ({ embedded = f
   useEffect(() => {
     fetchDatabaseRecords();
     const interval = setInterval(fetchDatabaseRecords, 8000);
-    return () => clearInterval(interval);
+    if (!embedded && currentUser?.role !== 'admin') {
+    return (
+      <div className="max-w-md mx-auto py-16 px-4 text-center space-y-4">
+        <div className="w-12 h-12 rounded-full bg-[#A8432C]/15 text-[#A8432C] dark:text-[#E58C73] mx-auto flex items-center justify-center">
+          <Database className="w-6 h-6" />
+        </div>
+        <h1 className="font-heading text-2xl text-[#13231F] dark:text-[#E6EEEA]">
+          Admin Access Only
+        </h1>
+        <p className="text-xs sm:text-sm text-[#55665F] dark:text-[#A6B8B0]">
+          The User Login & Activity Database is restricted to administrators. Please sign in with the Admin account to view user records.
+        </p>
+        <div className="flex items-center justify-center gap-3 pt-2">
+          <button
+            type="button"
+            onClick={() => navigate('/signup?mode=signin')}
+            className="px-5 py-2.5 rounded-full bg-[#102A2E] dark:bg-[#F2B134] text-white dark:text-[#102A2E] text-xs font-semibold cursor-pointer"
+          >
+            Sign In as Admin
+          </button>
+          <Link
+            to="/home"
+            className="px-5 py-2.5 rounded-full border border-[#D3DDD8] dark:border-[#2A403C] text-xs font-medium"
+          >
+            Back to Home
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  return () => clearInterval(interval);
   }, []);
 
   const filteredUsers = users.filter((u) => {
     const q = searchQuery.toLowerCase();
+    if (!embedded && currentUser?.role !== 'admin') {
     return (
+      <div className="max-w-md mx-auto py-16 px-4 text-center space-y-4">
+        <div className="w-12 h-12 rounded-full bg-[#A8432C]/15 text-[#A8432C] dark:text-[#E58C73] mx-auto flex items-center justify-center">
+          <Database className="w-6 h-6" />
+        </div>
+        <h1 className="font-heading text-2xl text-[#13231F] dark:text-[#E6EEEA]">
+          Admin Access Only
+        </h1>
+        <p className="text-xs sm:text-sm text-[#55665F] dark:text-[#A6B8B0]">
+          The User Login & Activity Database is restricted to administrators. Please sign in with the Admin account to view user records.
+        </p>
+        <div className="flex items-center justify-center gap-3 pt-2">
+          <button
+            type="button"
+            onClick={() => navigate('/signup?mode=signin')}
+            className="px-5 py-2.5 rounded-full bg-[#102A2E] dark:bg-[#F2B134] text-white dark:text-[#102A2E] text-xs font-semibold cursor-pointer"
+          >
+            Sign In as Admin
+          </button>
+          <Link
+            to="/home"
+            className="px-5 py-2.5 rounded-full border border-[#D3DDD8] dark:border-[#2A403C] text-xs font-medium"
+          >
+            Back to Home
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  return (
       u.full_name.toLowerCase().includes(q) ||
       u.email.toLowerCase().includes(q) ||
       u.role.toLowerCase().includes(q) ||
@@ -262,6 +327,37 @@ export const DatabaseRecords: React.FC<{ embedded?: boolean }> = ({ embedded = f
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
+
+  if (!embedded && currentUser?.role !== 'admin') {
+    return (
+      <div className="max-w-md mx-auto py-16 px-4 text-center space-y-4">
+        <div className="w-12 h-12 rounded-full bg-[#A8432C]/15 text-[#A8432C] dark:text-[#E58C73] mx-auto flex items-center justify-center">
+          <Database className="w-6 h-6" />
+        </div>
+        <h1 className="font-heading text-2xl text-[#13231F] dark:text-[#E6EEEA]">
+          Admin Access Only
+        </h1>
+        <p className="text-xs sm:text-sm text-[#55665F] dark:text-[#A6B8B0]">
+          The User Login & Activity Database is restricted to administrators. Please sign in with the Admin account to view user records.
+        </p>
+        <div className="flex items-center justify-center gap-3 pt-2">
+          <button
+            type="button"
+            onClick={() => navigate('/signup?mode=signin')}
+            className="px-5 py-2.5 rounded-full bg-[#102A2E] dark:bg-[#F2B134] text-white dark:text-[#102A2E] text-xs font-semibold cursor-pointer"
+          >
+            Sign In as Admin
+          </button>
+          <Link
+            to="/home"
+            className="px-5 py-2.5 rounded-full border border-[#D3DDD8] dark:border-[#2A403C] text-xs font-medium"
+          >
+            Back to Home
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={embedded ? 'space-y-6' : 'max-w-6xl mx-auto space-y-6 py-4'}>

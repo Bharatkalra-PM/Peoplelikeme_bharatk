@@ -46,14 +46,13 @@ export const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }
         { label: 'Requests', to: '/guide-home', icon: Inbox },
         { label: 'Switchers', to: '/guide-home/switchers', icon: Users },
         { label: 'Settings', to: '/settings', icon: Settings },
-        { label: 'User Database', to: '/database', icon: Database },
       ]
     : isAdmin
     ? [
         { label: 'Admin Hub', to: '/admin', icon: Shield },
+        { label: 'User Database', to: '/database', icon: Database },
         { label: 'Switchers View', to: '/home', icon: Home },
         { label: 'Settings', to: '/settings', icon: Settings },
-        { label: 'User Database', to: '/database', icon: Database },
       ]
     : [
         { label: 'Home', to: '/home', icon: Home },
@@ -61,7 +60,6 @@ export const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }
         { label: 'Career Guide', to: '/guide', icon: Compass },
         { label: 'Goals', to: '/goals', icon: CheckSquare },
         { label: 'Settings', to: '/settings', icon: Settings },
-        { label: 'User Database', to: '/database', icon: Database },
       ];
 
   const roleLabel = isGuide ? 'Career Guide' : isAdmin ? 'Admin' : 'Career Switcher';

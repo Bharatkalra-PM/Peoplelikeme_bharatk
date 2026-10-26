@@ -89,15 +89,17 @@ export const WalkthroughToolbar: React.FC = () => {
                 <span>Sample Guides: {demoMode ? 'ON' : 'OFF'}</span>
               </button>
 
-              <button
-                type="button"
-                onClick={() => navigate('/database')}
-                className="px-2.5 py-1 rounded-full bg-[#2F7D5B]/20 hover:bg-[#2F7D5B]/30 border border-[#5FBF8F] text-[11px] text-[#5FBF8F] font-semibold flex items-center gap-1 transition-colors cursor-pointer"
-                title="View live database records of all users who logged in"
-              >
-                <Database className="w-3 h-3" />
-                <span>User Database</span>
-              </button>
+              {currentUser.role === 'admin' && (
+                <button
+                  type="button"
+                  onClick={() => navigate('/database')}
+                  className="px-2.5 py-1 rounded-full bg-[#2F7D5B]/20 hover:bg-[#2F7D5B]/30 border border-[#5FBF8F] text-[11px] text-[#5FBF8F] font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+                  title="View live database records of all users who logged in (Admin only)"
+                >
+                  <Database className="w-3 h-3" />
+                  <span>User Database</span>
+                </button>
+              )}
 
               {/* Switch Account Dropdown */}
               <div className="relative">
