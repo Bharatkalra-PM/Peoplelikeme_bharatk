@@ -30,6 +30,7 @@ import { GuideHome } from './pages/guide/GuideHome';
 import { SwitcherSummary } from './pages/guide/SwitcherSummary';
 import { ReachOut } from './pages/guide/ReachOut';
 import { AdminHub } from './pages/admin/AdminHub';
+import { DatabaseRecords } from './pages/DatabaseRecords';
 
 export default function App() {
   return (
@@ -82,6 +83,7 @@ export default function App() {
 
             {/* Admin Hub */}
             <Route path="/admin" element={<AdminHub />} />
+            <Route path="/database" element={<DatabaseRecords />} />
 
             {/* Catch-all redirect */}
             <Route path="*" element={<Navigate to="/" replace />} />

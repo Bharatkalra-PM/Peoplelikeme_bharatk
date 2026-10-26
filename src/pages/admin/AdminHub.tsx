@@ -1,7 +1,8 @@
-﻿import React from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { InitialsAvatar } from '../../components/InitialsAvatar';
+import { DatabaseRecords } from '../DatabaseRecords';
 import {
   Shield,
   ShieldAlert,
@@ -75,6 +76,8 @@ export const AdminHub: React.FC = () => {
           Review Career Guide applications with automatic checks, CV, and move story. Only approved Career Guides can be recommended.
         </p>
       </div>
+
+      <DatabaseRecords embedded />
 
       {/* Career Guide Applications Queue (Pillar 4) */}
       <section className="space-y-4">

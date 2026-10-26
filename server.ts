@@ -375,6 +375,226 @@ app.post('/api/gemini/verify-guide-cv', async (req: Request, res: Response) => {
   }
 });
 
+// Persistent User Database & Activity Log Store
+const DB_DIR = path.resolve(__dirname, 'data');
+const DB_FILE = path.resolve(DB_DIR, 'user_records_db.json');
+
+interface ServerDbStore {
+  users: Record<string, any>;
+  activity_logs: any[];
+}
+
+function loadServerDb(): ServerDbStore {
+  try {
+    if (fs.existsSync(DB_FILE)) {
+      const raw = fs.readFileSync(DB_FILE, 'utf-8');
+      return JSON.parse(raw);
+    }
+  } catch (err) {
+    console.warn('Could not read DB file, initializing default:', err);
+  }
+  const now = new Date().toISOString();
+  const initial: ServerDbStore = {
+    users: {
+      'bharatk6325@gmail.com': {
+        user_id: 'user-bharat-k',
+        full_name: 'Bharat K.',
+        email: 'bharatk6325@gmail.com',
+        role: 'switcher',
+        city: 'Bengaluru',
+        created_at: now,
+        last_login_at: now,
+        login_count: 3,
+        onboarding_completed: true,
+        from_role: 'B2B Sales Lead',
+        to_role: 'Product Manager',
+        from_field: 'Sales',
+        years_experience: 5,
+        priority: 'Speed to role',
+        matched_guide: 'Arjun K.',
+        goals_count: 3,
+        latest_action: 'Active Week 1 Sprint with Career Guide Arjun K.',
+        actions_history: [
+          {
+            timestamp: now,
+            action: 'Signed In',
+            details: 'Authenticated via email & password (bharatk6325@gmail.com)',
+          },
+          {
+            timestamp: now,
+            action: 'Connected with Career Guide',
+            details: 'Matched and started Week 1 sprint with Arjun K. (B2B Sales → PM)',
+          },
+        ],
+      },
+      'varunk6325@gmail.com': {
+        user_id: 'user-varun-k',
+        full_name: 'Varun K.',
+        email: 'varunk6325@gmail.com',
+        role: 'switcher',
+        city: 'Bengaluru',
+        created_at: now,
+        last_login_at: now,
+        login_count: 1,
+        onboarding_completed: false,
+        from_role: '',
+        to_role: '',
+        from_field: '',
+        years_experience: 3,
+        priority: 'Speed to role',
+        matched_guide: 'Not connected yet',
+        goals_count: 0,
+        latest_action: 'Account registered (Onboarding Step 2)',
+        actions_history: [
+          {
+            timestamp: now,
+            action: 'Account Created',
+            details: 'Registered new switcher account (varunk6325@gmail.com)',
+          },
+        ],
+      },
+    },
+    activity_logs: [
+      {
+        log_id: 'log-seed-1',
+        timestamp: now,
+        user_id: 'user-bharat-k',
+        full_name: 'Bharat K.',
+        email: 'bharatk6325@gmail.com',
+        role: 'switcher',
+        action: 'Signed In',
+        details: 'Logged into active Week 1 dashboard (Matched with Arjun K.)',
+      },
+      {
+        log_id: 'log-seed-2',
+        timestamp: now,
+        user_id: 'user-varun-k',
+        full_name: 'Varun K.',
+        email: 'varunk6325@gmail.com',
+        role: 'switcher',
+        action: 'Account Created',
+        details: 'Created new switcher account',
+      },
+    ],
+  };
+  saveServerDb(initial);
+  return initial;
+}
+
+function saveServerDb(store: ServerDbStore) {
+  try {
+    if (!fs.existsSync(DB_DIR)) {
+      fs.mkdirSync(DB_DIR, { recursive: true });
+    }
+    fs.writeFileSync(DB_FILE, JSON.stringify(store, null, 2), 'utf-8');
+  } catch (err) {
+    console.warn('Could not persist DB file:', err);
+  }
+}
+
+const serverDb = loadServerDb();
+
+app.get('/api/db/records', (_req: Request, res: Response) => {
+  const usersArray = Object.values(serverDb.users).sort(
+    (a: any, b: any) =>
+      new Date(b.last_login_at || 0).getTime() - new Date(a.last_login_at || 0).getTime()
+  );
+  res.json({
+    database: 'people_like_me_prod',
+    updated_at: new Date().toISOString(),
+    users: usersArray,
+    activity_logs: serverDb.activity_logs.slice(0, 200),
+  });
+});
+
+app.post('/api/db/sync', (req: Request, res: Response) => {
+  try {
+    const {
+      user_id,
+      full_name,
+      email,
+      role = 'switcher',
+      city = 'Bengaluru',
+      onboarding_completed = false,
+      from_role = '',
+      to_role = '',
+      from_field = '',
+      years_experience = 3,
+      priority = 'Speed to role',
+      matched_guide = 'Not connected yet',
+      goals_count = 0,
+      action = 'Updated Activity',
+      details = '',
+      increment_login = false,
+      raw_state,
+    } = req.body || {};
+
+    if (!email) {
+      return res.status(400).json({ error: 'email is required' });
+    }
+
+    const cleanEmail = String(email).trim().toLowerCase();
+    const now = new Date().toISOString();
+    const existing = serverDb.users[cleanEmail];
+
+    const actionEntry = {
+      timestamp: now,
+      action,
+      details: details || action,
+    };
+
+    const updatedRecord = {
+      user_id: user_id || existing?.user_id || `user-${Date.now()}`,
+      full_name: full_name || existing?.full_name || cleanEmail.split('@')[0],
+      email: cleanEmail,
+      role: role || existing?.role || 'switcher',
+      city: city || existing?.city || 'Bengaluru',
+      created_at: existing?.created_at || now,
+      last_login_at: increment_login ? now : existing?.last_login_at || now,
+      login_count: existing
+        ? (existing.login_count || 1) + (increment_login ? 1 : 0)
+        : 1,
+      onboarding_completed:
+        onboarding_completed ?? existing?.onboarding_completed ?? false,
+      from_role: from_role || existing?.from_role || '',
+      to_role: to_role || existing?.to_role || '',
+      from_field: from_field || existing?.from_field || '',
+      years_experience: years_experience ?? existing?.years_experience ?? 3,
+      priority: priority || existing?.priority || 'Speed to role',
+      matched_guide:
+        matched_guide && matched_guide !== 'Not connected yet'
+          ? matched_guide
+          : existing?.matched_guide || 'Not connected yet',
+      goals_count: goals_count || existing?.goals_count || 0,
+      latest_action: `${action}${details ? ` — ${details}` : ''}`,
+      actions_history: [
+        actionEntry,
+        ...(existing?.actions_history || []).slice(0, 49),
+      ],
+      raw_state: raw_state || existing?.raw_state,
+    };
+
+    serverDb.users[cleanEmail] = updatedRecord;
+
+    const logItem = {
+      log_id: `log-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      timestamp: now,
+      user_id: updatedRecord.user_id,
+      full_name: updatedRecord.full_name,
+      email: cleanEmail,
+      role: updatedRecord.role,
+      action,
+      details: details || action,
+    };
+    serverDb.activity_logs = [logItem, ...serverDb.activity_logs.slice(0, 299)];
+
+    saveServerDb(serverDb);
+    return res.json({ ok: true, record: updatedRecord });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 // Health check endpoint
 app.get('/api/health', (_req: Request, res: Response) => {
   res.json({

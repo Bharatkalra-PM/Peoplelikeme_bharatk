@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { BrandMark } from './BrandMark';
 import { InitialsAvatar } from './InitialsAvatar';
@@ -14,11 +14,13 @@ import {
   Shield,
   LogOut,
   Calendar,
+  Database,
 } from 'lucide-react';
 
 export const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { currentUser, logout, currentRhythm } = useApp();
   const location = useLocation();
+  const navigate = useNavigate();
 
   // If user is not logged in or in onboarding flows, render clean layout without sidebar/bottom tabs
   const isOnboarding =
@@ -44,12 +46,14 @@ export const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }
         { label: 'Requests', to: '/guide-home', icon: Inbox },
         { label: 'Switchers', to: '/guide-home/switchers', icon: Users },
         { label: 'Settings', to: '/settings', icon: Settings },
+        { label: 'User Database', to: '/database', icon: Database },
       ]
     : isAdmin
     ? [
         { label: 'Admin Hub', to: '/admin', icon: Shield },
         { label: 'Switchers View', to: '/home', icon: Home },
         { label: 'Settings', to: '/settings', icon: Settings },
+        { label: 'User Database', to: '/database', icon: Database },
       ]
     : [
         { label: 'Home', to: '/home', icon: Home },
@@ -57,6 +61,7 @@ export const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }
         { label: 'Career Guide', to: '/guide', icon: Compass },
         { label: 'Goals', to: '/goals', icon: CheckSquare },
         { label: 'Settings', to: '/settings', icon: Settings },
+        { label: 'User Database', to: '/database', icon: Database },
       ];
 
   const roleLabel = isGuide ? 'Career Guide' : isAdmin ? 'Admin' : 'Career Switcher';
@@ -118,7 +123,7 @@ export const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }
             </NavLink>
           )}
           <button
-            onClick={logout}
+            onClick={() => { logout(); navigate('/'); }}
             className="flex items-center gap-2 px-3 py-1.5 text-xs text-[#A8432C] dark:text-[#E58C73] hover:opacity-80 transition-opacity w-full text-left"
           >
             <LogOut className="w-3.5 h-3.5" />
@@ -134,7 +139,7 @@ export const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }
           <BrandMark linkTo={isGuide ? '/guide-home' : '/home'} />
           <div className="flex items-center gap-3">
             <button
-              onClick={logout}
+              onClick={() => { logout(); navigate('/'); }}
               className="text-xs text-[#A8432C] dark:text-[#E58C73] font-medium flex items-center gap-1"
             >
               <LogOut className="w-3.5 h-3.5" />

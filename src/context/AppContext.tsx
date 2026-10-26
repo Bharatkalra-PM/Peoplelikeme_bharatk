@@ -598,6 +598,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setCurrentMoveProfile(confirmed);
     setDraftedProfile(confirmed);
     if (currentUser) {
+      recordUserDatabaseEvent(currentUser, 'Confirmed Move Profile', "${confirmed.from_role} -> ${confirmed.to_role} (${confirmed.years_experience} yrs exp)", false, confirmed);
       setCurrentUser({
         ...currentUser,
         city: detailChips.city || currentUser.city,
@@ -698,6 +699,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setRematchOffered(false);
 
     if (autoAccept) {
+      const gMatch = combinedGuidesList.find((g) => g.profile.id === guideId) || guidesList[0];
+      recordUserDatabaseEvent(currentUser, 'Connected with Career Guide', "${gMatch.profile.first_name} ${gMatch.profile.last_initial}", false, undefined, "${gMatch.profile.first_name} ${gMatch.profile.last_initial}");
       const matchedGuide = combinedGuidesList.find((g) => g.profile.id === guideId) || guidesList[0];
 
       setGuidesList((prev) =>
@@ -1374,6 +1377,92 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return JSON.stringify(exportObject, null, 2);
   };
 
+  // Sync user record & activity log to both localStorage DB and Server DB (/api/db/sync)
+  const recordUserDatabaseEvent = (
+    userObj: Profile,
+    action: string,
+    details: string,
+    incrementLogin = false,
+    moveOverride?: MoveProfile | null,
+    guideNameOverride?: string
+  ) => {
+    try {
+      const cleanEmail = userObj.email.trim().toLowerCase();
+      const now = new Date().toISOString();
+      const moveProf = moveOverride !== undefined ? moveOverride : currentMoveProfile || draftedProfile;
+      const matchedG =
+        guideNameOverride ||
+        (currentRhythm?.guide_id
+          ? combinedGuidesList.find((g) => g.profile.id === currentRhythm.guide_id)?.profile
+              .first_name +
+            ' ' +
+            (combinedGuidesList.find((g) => g.profile.id === currentRhythm.guide_id)?.profile
+              .last_initial || '')
+          : 'Not connected yet');
+
+      const rawRecords = localStorage.getItem('plm_database_records_v1');
+      const recordsMap: Record<string, any> = rawRecords ? JSON.parse(rawRecords) : {};
+      const existing = recordsMap[cleanEmail];
+
+      const actionEntry = { timestamp: now, action, details };
+      const updatedRecord = {
+        user_id: userObj.id,
+        full_name: userObj.full_name || `${userObj.first_name} ${userObj.last_initial}`.trim(),
+        email: cleanEmail,
+        role: userObj.role,
+        city: userObj.city || detailChips.city || 'Bengaluru',
+        created_at: existing?.created_at || userObj.created_at || now,
+        last_login_at: incrementLogin ? now : existing?.last_login_at || now,
+        login_count: existing ? (existing.login_count || 1) + (incrementLogin ? 1 : 0) : 1,
+        onboarding_completed: Boolean(userObj.onboarding_completed || moveProf),
+        from_role: moveProf?.from_role || detailChips.from_role || existing?.from_role || '',
+        to_role: moveProf?.to_role || detailChips.to_role || existing?.to_role || '',
+        from_field: moveProf?.from_field || detailChips.from_field || existing?.from_field || '',
+        years_experience:
+          moveProf?.years_experience ?? detailChips.years_experience ?? existing?.years_experience ?? 3,
+        priority: moveProf?.priority || detailChips.priority || existing?.priority || 'Speed to role',
+        matched_guide:
+          matchedG && matchedG !== 'Not connected yet'
+            ? matchedG
+            : existing?.matched_guide || 'Not connected yet',
+        goals_count: goals.length || existing?.goals_count || 0,
+        latest_action: `${action}${details ? ` — ${details}` : ''}`,
+        actions_history: [actionEntry, ...(existing?.actions_history || []).slice(0, 49)],
+      };
+
+      recordsMap[cleanEmail] = updatedRecord;
+      localStorage.setItem('plm_database_records_v1', JSON.stringify(recordsMap));
+
+      const rawLogs = localStorage.getItem('plm_activity_logs_v1');
+      const logsArr: any[] = rawLogs ? JSON.parse(rawLogs) : [];
+      const newLog = {
+        log_id: `log-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        timestamp: now,
+        user_id: updatedRecord.user_id,
+        full_name: updatedRecord.full_name,
+        email: cleanEmail,
+        role: updatedRecord.role,
+        action,
+        details,
+      };
+      localStorage.setItem('plm_activity_logs_v1', JSON.stringify([newLog, ...logsArr.slice(0, 299)]));
+
+      // Push to backend database asynchronously so all logins across devices are stored centrally
+      fetch('/api/db/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...updatedRecord,
+          action,
+          details,
+          increment_login: incrementLogin,
+        }),
+      }).catch(() => {});
+    } catch {
+      // ignore errors
+    }
+  };
+
   // Persist per-user state in localStorage so any user who signs up or logs in has their own data stored
   useEffect(() => {
     if (!currentUser?.email) return;
@@ -1442,11 +1531,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         onboarding_completed: true,
       };
       setCurrentUser(adminUser);
+      recordUserDatabaseEvent(adminUser, 'Admin Signed In', 'Accessed Admin & User Database Hub', true);
       return { isReturning: true, targetRoute: '/admin' };
     }
 
     if (!isNewUser && existingGuide) {
       setCurrentUser(existingGuide.profile);
+      recordUserDatabaseEvent(existingGuide.profile, 'Career Guide Signed In', 'Opened Career Guide Dashboard', true);
       return { isReturning: true, targetRoute: '/guide-home' };
     }
 
@@ -1468,6 +1559,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         constraints: ['Self-taught tech knowledge'],
         preferred_guide_gender: 'No preference',
       });
+      recordUserDatabaseEvent(DEFAULT_DEMO_SWITCHER.profile, 'User Signed In', 'Authenticated & opened Week 1 Sprint Dashboard', true, DEFAULT_DEMO_SWITCHER.move_profile, 'Arjun K.');
       return { isReturning: true, targetRoute: '/home' };
     }
 
@@ -1501,6 +1593,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           const completed = Boolean(
             savedUser.profile.onboarding_completed || savedUser.moveProfile
           );
+          recordUserDatabaseEvent(savedUser.profile, 'Returning User Signed In', completed ? 'Restored saved move profile & dashboard' : 'Resumed onboarding flow', true, savedUser.moveProfile);
           return {
             isReturning: completed,
             targetRoute:
@@ -1576,6 +1669,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setBackgroundInfo(emptyBg);
     setDetailChips(emptyChips);
     setGoals([]);
+    recordUserDatabaseEvent(newUser, isNewUser ? 'Account Created' : 'User Signed In', "${newUser.full_name} (${cleanEmail}) joined as ${role}", true, null, 'Not connected yet');
 
     return {
       isReturning: false,
