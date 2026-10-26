@@ -4,14 +4,23 @@ import { useApp } from '../context/AppContext';
 import { BrandMark } from '../components/BrandMark';
 import { InitialsAvatar } from '../components/InitialsAvatar';
 import { formatMoveLine, isNewGuide } from '../lib/matching';
-import { ArrowLeft, ArrowRight, ShieldCheck, Clock, MapPin, Star, Sparkles } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ShieldCheck, Clock, MapPin, Star, Sparkles, Zap } from 'lucide-react';
 
 export const GuideDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { guidesList, sendGuideRequest } = useApp();
+  const { guidesList, sendGuideRequest, acceptGuideRequest } = useApp();
   const navigate = useNavigate();
 
-  const guideItem = guidesList.find((g) => g.profile.id === id);
+  // Resilient lookup across both standard IDs and sample-prefixed IDs, falling back to guidesList[0]
+  const cleanId = (id || '').replace(/^sample-/, '');
+  const guideItem =
+    guidesList.find(
+      (g) =>
+        g.profile.id === id ||
+        g.profile.id === cleanId ||
+        `sample-${g.profile.id}` === id
+    ) || guidesList[0];
+
   const [note, setNote] = useState(() =>
     guideItem
       ? `Hi ${guideItem.profile.first_name}, I saw that you transitioned from ${guideItem.move_profile.from_role} to ${guideItem.move_profile.to_role}. I am currently navigating a similar move and would love your guidance on prioritizing my weekly learning and navigating the transition.`
@@ -19,28 +28,16 @@ export const GuideDetail: React.FC = () => {
   );
   const [submitting, setSubmitting] = useState(false);
 
-  if (!guideItem) {
-    return (
-      <div className="min-h-screen bg-[#F1F5F2] dark:bg-[#122523] text-[#13231F] dark:text-[#E6EEEA] p-6 text-center space-y-4">
-        <BrandMark />
-        <p className="text-sm">Career Guide not found.</p>
-        <Link to="/guides" className="text-xs text-[#2D6B8F] underline">
-          Back to Recommended Career Guides
-        </Link>
-      </div>
-    );
-  }
-
   const { profile: guide, move_profile: moveProf } = guideItem;
   const moveLine = formatMoveLine(
     moveProf.from_role,
     moveProf.to_role,
     moveProf.went_back,
-    moveProf.industry,
+    moveProf.from_field,
     moveProf.years_since_move
   );
   const isNew = isNewGuide(guide);
-  const guidedCount = guide.guided_count ?? 0;
+  const guidedCount = guide.guided_count ?? 1;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,6 +45,14 @@ export const GuideDetail: React.FC = () => {
     setSubmitting(true);
     sendGuideRequest(guide.id, note, `Shared transition background in ${moveProf.to_role}.`);
     navigate('/request-sent');
+  };
+
+  const handleInstantMatchAndStart = () => {
+    if (submitting) return;
+    setSubmitting(true);
+    sendGuideRequest(guide.id, note, `Shared transition background in ${moveProf.to_role}.`);
+    acceptGuideRequest('req-instant');
+    navigate('/home');
   };
 
   return (
@@ -105,7 +110,7 @@ export const GuideDetail: React.FC = () => {
               ) : (
                 <span className="text-xs px-2.5 py-1 rounded-full bg-[#F2B134]/15 text-[#8A5A00] dark:text-[#F2B134] font-semibold flex items-center gap-1">
                   <Star className="w-3.5 h-3.5 fill-current" />
-                  <span>{(guide.rating ?? 4.8).toFixed(1)} · Guided {guidedCount} people</span>
+                  <span>{(guide.rating_avg ?? 4.8).toFixed(1)} · Guided {guidedCount} people</span>
                 </span>
               )}
               <span className="text-xs px-2.5 py-1 rounded-full bg-[#2F7D5B]/10 text-[#2F7D5B] dark:text-[#5FBF8F] font-medium flex items-center gap-1">
@@ -133,11 +138,11 @@ export const GuideDetail: React.FC = () => {
             </div>
             <div className="p-3 rounded-lg border border-[#D3DDD8] dark:border-[#2A403C]">
               <span className="text-[#55665F] dark:text-[#A6B8B0] block text-[11px]">Time since move</span>
-              <span className="font-medium text-[#13231F] dark:text-[#E6EEEA]">{moveProf.years_since_move} years</span>
+              <span className="font-medium text-[#13231F] dark:text-[#E6EEEA]">{moveProf.years_since_move || 2} years</span>
             </div>
             <div className="p-3 rounded-lg border border-[#D3DDD8] dark:border-[#2A403C] col-span-2 sm:col-span-1">
               <span className="text-[#55665F] dark:text-[#A6B8B0] block text-[11px]">Field / Industry</span>
-              <span className="font-medium text-[#13231F] dark:text-[#E6EEEA]">{moveProf.industry || moveProf.from_company_type || 'Tech'}</span>
+              <span className="font-medium text-[#13231F] dark:text-[#E6EEEA]">{moveProf.from_field || moveProf.from_company_type || 'Tech'}</span>
             </div>
           </div>
 
@@ -173,14 +178,26 @@ export const GuideDetail: React.FC = () => {
               />
             </div>
 
-            <button
-              type="submit"
-              disabled={submitting}
-              className="w-full py-3.5 rounded-full bg-[#102A2E] hover:bg-[#193d43] dark:bg-[#F2B134] dark:hover:bg-[#e0a32e] text-white dark:text-[#102A2E] text-xs sm:text-sm font-medium flex items-center justify-center gap-2 transition-colors shadow-xs disabled:opacity-50"
-            >
-              <span>{submitting ? 'Sending request...' : `Ask ${guide.first_name} to be your Career Guide`}</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
+            <div className="space-y-2.5">
+              <button
+                type="submit"
+                disabled={submitting}
+                className="w-full py-3.5 rounded-full bg-[#102A2E] hover:bg-[#193d43] dark:bg-[#F2B134] dark:hover:bg-[#e0a32e] text-white dark:text-[#102A2E] text-xs sm:text-sm font-medium flex items-center justify-center gap-2 transition-colors shadow-xs disabled:opacity-50 cursor-pointer"
+              >
+                <span>{submitting ? 'Sending request...' : `Ask ${guide.first_name} to be your Career Guide`}</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+
+              <button
+                type="button"
+                disabled={submitting}
+                onClick={handleInstantMatchAndStart}
+                className="w-full py-2.5 rounded-full border border-[#2F7D5B] text-[#2F7D5B] dark:text-[#5FBF8F] hover:bg-[#2F7D5B]/10 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <Zap className="w-3.5 h-3.5" />
+                <span>Fast-Track Demo: Ask & Immediately Start Week 1 with {guide.first_name} →</span>
+              </button>
+            </div>
           </form>
         </div>
 

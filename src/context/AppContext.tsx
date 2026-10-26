@@ -122,6 +122,7 @@ interface AppContextType {
   // Pod & Rhythm & Sprint Plan
   currentRhythm: Rhythm | null;
   currentPod: Pod | null;
+  userPod: (Pod & { members: PodMember[]; target_size: number }) | null;
   podMembers: PodMember[];
   podReadyNotification: string | null;
   dismissPodNotification: () => void;
@@ -133,21 +134,31 @@ interface AppContextType {
     podCheckinSlot: string
   ) => void;
   sprintPlan: SprintPlan | null;
-  addMilestone: (week: number, title: string, description?: string) => void;
-  updateMilestone: (id: string, updates: Partial<Milestone>) => void;
+  addMilestone: (weekOrTitle: number | string, titleOrWeek?: string | number, description?: string) => void;
+  updateMilestone: (id: string, updates: Partial<Milestone> & { target_week?: number }) => void;
+  toggleMilestoneComplete: (id: string) => void;
   removeMilestone: (id: string) => void;
   reorderMilestone: (id: string, direction: 'up' | 'down') => void;
   finalisePlan: () => void;
+  finaliseSprintPlan: () => void;
+  suggestedGoals: { id: string; text: string }[];
   suggestWeeklyGoal: (goalText: string, week?: number) => void;
-  acceptSuggestedGoal: (goalText: string) => void;
-  dismissSuggestedGoal: (goalText: string) => void;
+  acceptSuggestedGoal: (goalIdOrText: string, editedText?: string) => void;
+  dismissSuggestedGoal: (goalIdOrText: string) => void;
   // Post-Conversation Rating
   conversationRatings: ConversationRating[];
   rateConversation: (
-    sessionId: string,
-    helpfulScore: number,
-    moveMatchScore: number
+    sessionIdOrGuideId: string,
+    helpfulScoreOrWeek: number,
+    moveMatchScoreOrHelpful: number,
+    maybeMoveMatchScore?: number
   ) => void;
+  // Guide Direct Messages
+  guideMessages: { id: string; sender: 'switcher' | 'guide'; senderName: string; text: string; createdAt: string }[];
+  sendGuideMessage: (text: string) => void;
+  // Demo Toast Banner
+  demoToast: { title: string; message: string; linkTo?: string; linkLabel?: string } | null;
+  setDemoToast: (toast: { title: string; message: string; linkTo?: string; linkLabel?: string } | null) => void;
   // Goals
   goals: Goal[];
   updateGoalStatus: (goalId: string, status: 'not_yet' | 'partly' | 'done') => void;
@@ -320,6 +331,51 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     name: string;
   } | null>(null);
   const [podReadyNotification, setPodReadyNotification] = useState<string | null>(null);
+  const [demoToast, setDemoToast] = useState<{
+    title: string;
+    message: string;
+    linkTo?: string;
+    linkLabel?: string;
+  } | null>(null);
+
+  const [guideMessages, setGuideMessages] = useState<
+    { id: string; sender: 'switcher' | 'guide'; senderName: string; text: string; createdAt: string }[]
+  >(() =>
+    loadSavedState('guideMessages', [
+      {
+        id: 'gmsg-1',
+        sender: 'guide',
+        senderName: 'Arjun K.',
+        text: 'Hi! Excited to be your Career Guide for this 8-week sprint. I have reviewed your story and drafted 5 milestones for us. Let’s review them in our first 30-min call!',
+        createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+      },
+    ])
+  );
+
+  const sendGuideMessage = (text: string) => {
+    if (!text.trim()) return;
+    const switcherMsg = {
+      id: `gmsg-${Date.now()}`,
+      sender: 'switcher' as const,
+      senderName: currentUser?.first_name || 'You',
+      text: text.trim(),
+      createdAt: new Date().toISOString(),
+    };
+    const matchedGuide =
+      combinedGuidesList.find((g) => g.profile.id === currentRhythm?.guide_id) ||
+      combinedGuidesList[0];
+    const guideName = `${matchedGuide.profile.first_name} ${matchedGuide.profile.last_initial}`;
+    const autoReply = {
+      id: `gmsg-${Date.now() + 1}`,
+      sender: 'guide' as const,
+      senderName: guideName,
+      text: `Thanks for sharing that! I've noted it for our 1:1 session and updated your Week ${
+        currentRhythm?.week || 1
+      } focus areas.`,
+      createdAt: new Date(Date.now() + 1000).toISOString(),
+    };
+    setGuideMessages((prev) => [...prev, switcherMsg, autoReply]);
+  };
 
   // Career Guide Applications & Ratings
   const [guideApplications, setGuideApplications] = useState<CareerGuideApplication[]>(
@@ -496,6 +552,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
     return guidesList.filter((g) => !g.profile.is_sample);
   }, [demoMode, guidesList]);
+
+  // Combined list of all real + sample guides so lookups by ID on /guides/:id NEVER fail
+  const combinedGuidesList = React.useMemo(() => {
+    const map = new Map<string, SeedGuide>();
+    for (const g of guidesList) map.set(g.profile.id, g);
+    for (const sg of DEMO_SAMPLE_GUIDES) map.set(sg.profile.id, sg);
+    return Array.from(map.values());
+  }, [guidesList]);
 
   const setUserObjective = (objective: ObjectiveType) => {
     if (!currentUser) return;
@@ -751,26 +815,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
   };
 
-  // 48-Hour Expiry -> automatically offer next best match
+  // 48-Hour Expiry -> automatically offer next best match (works even if clicked directly from top bar)
   const simulate48HourExpiry = () => {
+    const targetGuideId =
+      activeRequest?.guide_id ||
+      guideCandidates.matches[0]?.profile.id ||
+      'guide-arjun-k';
     if (activeRequest) {
-      const expiredGuideId = activeRequest.guide_id;
       setGuideRequests((prev) =>
         prev.map((r) =>
           r.id === activeRequest.id ? { ...r, status: 'expired' as const } : r
         )
       );
-      setDeclinedGuideIds((prev) =>
-        prev.includes(expiredGuideId) ? prev : [...prev, expiredGuideId]
-      );
-      const guide = activeGuidesPool.find((g) => g.profile.id === expiredGuideId);
-      setRematchOffered(true);
-      setRematchReasonNote(
-        `${
-          guide?.profile.first_name || 'Arjun'
-        } couldn't reply within 48 hours. Here is your next best Career Guide match automatically.`
-      );
     }
+    setDeclinedGuideIds((prev) =>
+      prev.includes(targetGuideId) ? prev : [...prev, targetGuideId]
+    );
+    const guide = combinedGuidesList.find((g) => g.profile.id === targetGuideId);
+    const guideName = guide?.profile.first_name || 'Arjun';
+    setRematchOffered(true);
+    setRematchReasonNote(
+      `${guideName} couldn't reply within 48 hours, so we automatically offered your next best Career Guide matches below.`
+    );
+    setDemoToast({
+      title: '48-Hour Auto-Rematch Triggered',
+      message: `${guideName} did not respond within 48 hours. We automatically removed ${guideName} and promoted your next closest Career Guide matches!`,
+      linkTo: '/guides',
+      linkLabel: 'View Next Best Matches',
+    });
   };
 
   // Pod & Rhythm
@@ -796,6 +868,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [currentPod, podMembersMap, demoMode]);
 
   const dismissPodNotification = () => setPodReadyNotification(null);
+
+  const userPod = React.useMemo(() => {
+    if (!currentPod) return null;
+    return {
+      ...currentPod,
+      members: podMembers,
+      target_size: currentPod.max_members || 4,
+    };
+  }, [currentPod, podMembers]);
+
+  const suggestedGoals = React.useMemo(() => {
+    if (!sprintPlan) return [];
+    const wk = currentRhythm?.week || 1;
+    const list = sprintPlan.suggested_goals[wk] || sprintPlan.suggested_goals[1] || [];
+    return list.map((text, idx) => ({ id: `sg-${wk}-${idx}`, text }));
+  }, [sprintPlan, currentRhythm?.week]);
+
+  const toggleMilestoneComplete = (id: string) => {
+    if (!sprintPlan) return;
+    setSprintPlan({
+      ...sprintPlan,
+      milestones: sprintPlan.milestones.map((m) =>
+        m.id === id ? { ...m, completed: !m.completed } : m
+      ),
+      updated_at: new Date().toISOString(),
+    });
+  };
 
   const simulatePodReady = () => {
     const podId = currentPod?.id || 'pod-pm-forming';
@@ -872,8 +971,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   // Sprint Plan & Milestones (Career Guide owns the plan)
-  const addMilestone = (week: number, title: string, description?: string) => {
+  const addMilestone = (
+    weekOrTitle: number | string,
+    titleOrWeek?: string | number,
+    description?: string
+  ) => {
     if (!sprintPlan) return;
+    const week =
+      typeof weekOrTitle === 'number'
+        ? weekOrTitle
+        : typeof titleOrWeek === 'number'
+        ? titleOrWeek
+        : 4;
+    const title =
+      typeof weekOrTitle === 'string'
+        ? weekOrTitle
+        : typeof titleOrWeek === 'string'
+        ? titleOrWeek
+        : 'Milestone';
     const newMs: Milestone = {
       id: `ms-${Date.now()}`,
       week: Math.min(8, Math.max(1, week)),
@@ -888,12 +1003,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   };
 
-  const updateMilestone = (id: string, updates: Partial<Milestone>) => {
+  const updateMilestone = (
+    id: string,
+    updates: Partial<Milestone> & { target_week?: number }
+  ) => {
     if (!sprintPlan) return;
     setSprintPlan({
       ...sprintPlan,
       milestones: sprintPlan.milestones.map((m) =>
-        m.id === id ? { ...m, ...updates } : m
+        m.id === id
+          ? {
+              ...m,
+              ...updates,
+              week: updates.week ?? updates.target_week ?? m.week,
+            }
+          : m
       ),
       updated_at: new Date().toISOString(),
     });
@@ -948,45 +1072,57 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   };
 
-  const acceptSuggestedGoal = (goalText: string) => {
+  const acceptSuggestedGoal = (goalIdOrText: string, editedText?: string) => {
+    const matchedObj = suggestedGoals.find((sg) => sg.id === goalIdOrText);
+    const rawText = matchedObj ? matchedObj.text : goalIdOrText;
+    const finalText = (editedText || rawText).trim();
+    if (!finalText) return;
     const today = new Date().toISOString().split('T')[0];
     const newGoal: Goal = {
       id: `goal-${Date.now()}`,
       user_id: currentUser?.id || 'user-varun',
       week_start: today,
       week_number: currentRhythm?.week || 1,
-      text: goalText,
+      text: finalText,
       status: 'not_yet',
       suggested_by_guide: true,
       updated_at: new Date().toISOString(),
     };
     setGoals((prev) => [...prev, newGoal]);
-    dismissSuggestedGoal(goalText);
+    dismissSuggestedGoal(rawText);
   };
 
-  const dismissSuggestedGoal = (goalText: string) => {
+  const dismissSuggestedGoal = (goalIdOrText: string) => {
     if (!sprintPlan) return;
+    const matchedObj = suggestedGoals.find((sg) => sg.id === goalIdOrText);
+    const textToDismiss = matchedObj ? matchedObj.text : goalIdOrText;
     const targetWeek = currentRhythm?.week || 1;
-    const existing = sprintPlan.suggested_goals[targetWeek] || [];
+    const existing = sprintPlan.suggested_goals[targetWeek] || sprintPlan.suggested_goals[1] || [];
     setSprintPlan({
       ...sprintPlan,
       suggested_goals: {
         ...sprintPlan.suggested_goals,
-        [targetWeek]: existing.filter((g) => g !== goalText),
+        [targetWeek]: existing.filter((g) => g !== textToDismiss),
+        1: (sprintPlan.suggested_goals[1] || []).filter((g) => g !== textToDismiss),
       },
     });
   };
 
   // Post-Conversation Private Rating (updates guide rating & ranking)
   const rateConversation = (
-    sessionId: string,
-    helpfulScore: number,
-    moveMatchScore: number
+    sessionIdOrGuideId: string,
+    helpfulScoreOrWeek: number,
+    moveMatchScoreOrHelpful: number,
+    maybeMoveMatchScore?: number
   ) => {
-    const guideId = currentRhythm?.guide_id || 'guide-arjun-k';
+    const guideId = currentRhythm?.guide_id || sessionIdOrGuideId || 'guide-arjun-k';
+    const helpfulScore =
+      maybeMoveMatchScore !== undefined ? moveMatchScoreOrHelpful : helpfulScoreOrWeek;
+    const moveMatchScore =
+      maybeMoveMatchScore !== undefined ? maybeMoveMatchScore : moveMatchScoreOrHelpful;
     const newRating: ConversationRating = {
       id: `rating-${Date.now()}`,
-      session_id: sessionId,
+      session_id: sessionIdOrGuideId,
       switcher_id: currentUser?.id || 'user-varun',
       guide_id: guideId,
       helpful_score: helpfulScore,
@@ -1095,9 +1231,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Slip simulation & Reach-out prompts
   const simulateSlip = () => {
-    const promptId = `prompt-${Date.now()}`;
-    const newPrompt: ReachOutPrompt = {
-      id: promptId,
+    const guidePromptId = 'prompt-demo-slip';
+    const podPromptId = 'prompt-demo-pod-slip';
+    const moveLineStr = formatMoveLine(
+      currentMoveProfile?.from_role || 'B2B SaaS Sales',
+      currentMoveProfile?.to_role || 'Product Manager'
+    );
+    const guidePrompt: ReachOutPrompt = {
+      id: guidePromptId,
       subject_user_id: currentUser?.id || 'user-varun',
       subject_name: currentUser?.first_name || 'Varun',
       subject_initial: currentUser?.last_initial || 'S.',
@@ -1105,18 +1246,65 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       reason: 'few_goals_two_weeks',
       created_at: new Date().toISOString(),
       resolved_at: null,
-      move_line: formatMoveLine(
-        currentMoveProfile?.from_role || 'B2B SaaS Sales',
-        currentMoveProfile?.to_role || 'Product Manager'
-      ),
+      move_line: moveLineStr,
     };
-    setReachOutPrompts((prev) => [newPrompt, ...prev]);
+    const podPrompt: ReachOutPrompt = {
+      id: podPromptId,
+      subject_user_id: 'user-rohan',
+      subject_name: 'Rohan',
+      subject_initial: 'D.',
+      audience: 'pod',
+      reason: 'no_update_7_days',
+      created_at: new Date().toISOString(),
+      resolved_at: null,
+      move_line: moveLineStr,
+    };
+    setReachOutPrompts((prev) => [
+      guidePrompt,
+      podPrompt,
+      ...prev.filter((p) => p.id !== guidePromptId && p.id !== podPromptId),
+    ]);
+    setDemoToast({
+      title: 'Check-In Nudge ("Slip") Triggered',
+      message:
+        'When a switcher misses weekly goals or goes quiet for 7 days, their Career Guide and Pod get a gentle human check-in prompt (never an automated bot message).',
+      linkTo: '/guide-home/reach-out/prompt-demo-slip',
+      linkLabel: 'Open Career Guide Check-in Screen',
+    });
   };
 
   const simulateWeekAdvance = () => {
-    if (!currentRhythm) return;
+    if (!currentRhythm) {
+      const fallbackRhythm: Rhythm = {
+        id: `rhythm-${Date.now()}`,
+        switcher_id: currentUser?.id || 'user-bharat-k',
+        guide_id: 'guide-arjun-k',
+        pod_id: 'pod-pm-forming',
+        start_date: new Date().toISOString().split('T')[0],
+        week: 2,
+        status: 'active',
+        guide_slot: 'Wednesdays 6:30 PM',
+      };
+      setCurrentRhythm(fallbackRhythm);
+      setDemoToast({
+        title: 'Advanced Sprint to Week 2 of 8',
+        message: 'Your 8-week sprint is now in Week 2 of 8.',
+        linkTo: '/home',
+        linkLabel: 'Go to Week 2 Dashboard',
+      });
+      return;
+    }
     const nextWeek = Math.min(8, currentRhythm.week + 1);
     setCurrentRhythm({ ...currentRhythm, week: nextWeek });
+    setDemoToast({
+      title: `Advanced Sprint to Week ${nextWeek} of 8`,
+      message:
+        nextWeek === 8
+          ? 'You have reached Week 8 of 8! You can now complete the 8-Week Wrap-up or mark your role as landed.'
+          : `Your sprint timeline and weekly goals have rolled forward to Week ${nextWeek} of 8.`,
+      linkTo: nextWeek === 8 ? '/wrap-up' : '/home',
+      linkLabel: nextWeek === 8 ? 'Open 8-Week Wrap-Up' : `View Week ${nextWeek} Plan`,
+    });
   };
 
   const resolveReachOutPrompt = (promptId: string) => {
@@ -1303,7 +1491,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       });
       setGoals(DEFAULT_DEMO_SWITCHER.goals);
     } else if (type === 'new_switcher') {
-      login('varun@example.com', 'switcher', 'Varun S.', true);
+      login('varunk6325@gmail.com', 'switcher', 'Varun K.', true);
     } else if (type === 'guide_vikram') {
       const vikram = guidesList.find((g) => g.profile.id === 'guide-vikram-s')?.profile;
       if (vikram) setCurrentUser(vikram);
@@ -1637,6 +1825,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         simulate48HourExpiry,
         currentRhythm,
         currentPod,
+        userPod,
         podMembers,
         podReadyNotification,
         dismissPodNotification,
@@ -1646,14 +1835,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         sprintPlan,
         addMilestone,
         updateMilestone,
+        toggleMilestoneComplete,
         removeMilestone,
         reorderMilestone,
         finalisePlan,
+        finaliseSprintPlan: finalisePlan,
+        suggestedGoals,
         suggestWeeklyGoal,
         acceptSuggestedGoal,
         dismissSuggestedGoal,
         conversationRatings,
         rateConversation,
+        guideMessages,
+        sendGuideMessage,
+        demoToast,
+        setDemoToast,
         goals,
         updateGoalStatus,
         saveWeeklyGoals,
@@ -1672,7 +1868,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         submitReport,
         deleteAccount,
         exportDataJson,
-        guidesList,
+        guidesList: combinedGuidesList,
         pendingGuideApprovals,
         approveGuide,
         guideApplications,

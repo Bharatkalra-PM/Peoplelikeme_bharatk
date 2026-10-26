@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { BrandMark } from '../../components/BrandMark';
@@ -174,7 +174,7 @@ export const BecomeAGuide: React.FC = () => {
 
                   <div className="space-y-2">
                     <h2 className="font-heading text-xl text-[#13231F] dark:text-[#E6EEEA]">
-                      {existingApp.full_name} ({existingApp.from_role} → {existingApp.to_role})
+                      {existingApp.full_name} ({existingApp.from_role} â†’ {existingApp.to_role})
                     </h2>
                     <p className="text-xs sm:text-sm text-[#55665F] dark:text-[#A6B8B0] leading-relaxed">
                       {info.description}
@@ -189,15 +189,15 @@ export const BecomeAGuide: React.FC = () => {
                   <div className="p-4 rounded-xl bg-[#F1F5F2] dark:bg-[#122523] border border-[#D3DDD8]/60 dark:border-[#2A403C] grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                     <div className="flex items-center gap-2">
                       <CheckCircle2 className="w-4 h-4 text-[#2F7D5B] dark:text-[#5FBF8F]" />
-                      <span>LinkedIn: {existingApp.linkedin_connected ? 'Connected' : 'Pending'}</span>
+                      <span>LinkedIn: {(existingApp.checks?.linkedin_connected ?? (existingApp as any).linkedin_connected) ? 'Connected' : 'Pending'}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <CheckCircle2 className="w-4 h-4 text-[#2F7D5B] dark:text-[#5FBF8F]" />
-                      <span>Email: {existingApp.work_email_verified ? 'Verified' : 'Pending'}</span>
+                      <span>Email: {(existingApp.checks?.email_verified ?? (existingApp as any).work_email_verified) ? 'Verified' : 'Pending'}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Clock className="w-4 h-4 text-[#8A5A00] dark:text-[#F2B134]" />
-                      <span>Move: {existingApp.years_in_earlier_role}y → {existingApp.years_in_current_role}y</span>
+                      <span>Move: {existingApp.years_in_earlier_role}y â†’ {existingApp.years_in_current_role}y</span>
                     </div>
                   </div>
 
@@ -501,3 +501,4 @@ export const BecomeAGuide: React.FC = () => {
     </div>
   );
 };
+

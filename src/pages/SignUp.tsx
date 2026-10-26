@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { BrandMark } from '../components/BrandMark';
@@ -24,6 +24,7 @@ export const SignUp: React.FC = () => {
   const initialRole = (searchParams.get('role') as 'switcher' | 'guide') || 'switcher';
   const [role, setRole] = useState<'switcher' | 'guide'>(initialRole);
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [sentMagicLink, setSentMagicLink] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -43,8 +44,8 @@ export const SignUp: React.FC = () => {
 
   // Google Sign-In modal state
   const [showGmailModal, setShowGmailModal] = useState(false);
-  const [gmailInput, setGmailInput] = useState('varun@example.com');
-  const [gmailName, setGmailName] = useState('Varun S.');
+  const [gmailInput, setGmailInput] = useState('varunk6325@gmail.com');
+  const [gmailName, setGmailName] = useState('Varun K.');
   const [showApiKeysModal, setShowApiKeysModal] = useState(false);
 
   const googleButtonRef = useRef<HTMLDivElement>(null);
@@ -60,8 +61,8 @@ export const SignUp: React.FC = () => {
         callback: (response: any) => {
           try {
             const payload = JSON.parse(atob(response.credential.split('.')[1]));
-            const userEmail = payload.email || 'varun@gmail.com';
-            const userName = payload.name || payload.given_name || 'Varun S.';
+            const userEmail = payload.email || 'varunk6325@gmail.com';
+            const userName = payload.name || payload.given_name || 'Varun K.';
             const { targetRoute } = login(userEmail, role, userName);
             navigate(targetRoute);
           } catch (err) {
@@ -135,7 +136,7 @@ export const SignUp: React.FC = () => {
 
     setTimeout(() => {
       const displayName =
-        name.trim() || (role === 'guide' ? 'Arjun K.' : 'Varun S.');
+        name.trim() || (role === 'guide' ? 'Arjun K.' : 'Varun K.');
       const { targetRoute } = login(email.trim(), role, displayName);
       setIsSubmitting(false);
       navigate(targetRoute);
@@ -166,7 +167,7 @@ export const SignUp: React.FC = () => {
           <p className="text-sm text-[#55665F] dark:text-[#A6B8B0]">
             {role === 'switcher'
               ? 'Join people making your exact move. Continue with Google or a magic email link.'
-              : 'Help someone making the transition you made 1–5 years ago.'}
+              : 'Help someone making the transition you made 1â€“5 years ago.'}
           </p>
         </div>
 
@@ -191,6 +192,26 @@ export const SignUp: React.FC = () => {
           </div>
         )}
 
+                {/* Demo Accounts Box */}
+        <div className="p-4 rounded-2xl bg-[#FFFFFF] dark:bg-[#0E1E1D] border border-[#F2B134]/60 space-y-2.5 shadow-xs text-xs">
+          <p className="font-semibold uppercase tracking-wider text-[11px] text-[#8A5A00] dark:text-[#F2B134]">
+            Demo Login Accounts (1-Click or Email + Password)
+          </p>
+          <div className="p-2.5 rounded-xl bg-[#F1F5F2] dark:bg-[#122523] flex items-center justify-between gap-2">
+            <div>
+              <p className="font-semibold text-[#13231F] dark:text-[#E6EEEA]">Bharat K. (Active Dashboard)</p>
+              <p className="text-[11px] text-[#55665F] dark:text-[#A6B8B0]">Email: <strong>bharatk6325@gmail.com</strong> • Pass: <strong>Bharat@123</strong></p>
+            </div>
+            <button type="button" onClick={() => { const { targetRoute } = login('bharatk6325@gmail.com', 'switcher', 'Bharat K.', false); navigate(targetRoute); }} className="px-3 py-1.5 rounded-full bg-[#102A2E] dark:bg-[#F2B134] text-white dark:text-[#102A2E] font-semibold cursor-pointer shrink-0">Login →</button>
+          </div>
+          <div className="p-2.5 rounded-xl bg-[#F1F5F2] dark:bg-[#122523] flex items-center justify-between gap-2">
+            <div>
+              <p className="font-semibold text-[#13231F] dark:text-[#E6EEEA]">Varun K. (New Switcher Onboarding)</p>
+              <p className="text-[11px] text-[#55665F] dark:text-[#A6B8B0]">Email: <strong>varunk6325@gmail.com</strong> • Pass: <strong>Varun@123</strong></p>
+            </div>
+            <button type="button" onClick={() => { const { targetRoute } = login('varunk6325@gmail.com', 'switcher', 'Varun K.', true); navigate(targetRoute); }} className="px-3 py-1.5 rounded-full bg-[#102A2E] dark:bg-[#F2B134] text-white dark:text-[#102A2E] font-semibold cursor-pointer shrink-0">Login →</button>
+          </div>
+        </div>
         {/* Role toggle */}
         <div className="flex p-1 bg-[#FFFFFF] dark:bg-[#0E1E1D] border border-[#D3DDD8] dark:border-[#2A403C] rounded-full text-xs font-medium">
           <button
@@ -281,7 +302,7 @@ export const SignUp: React.FC = () => {
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Varun S."
+                  placeholder="e.g. Varun K."
                   className="w-full px-3.5 py-2.5 rounded-[10px] border border-[#D3DDD8] dark:border-[#2A403C] bg-[#F1F5F2]/40 dark:bg-[#122523]/40 text-[#13231F] dark:text-[#E6EEEA] text-sm focus:bg-white dark:focus:bg-[#0E1E1D]"
                 />
               </div>
@@ -301,10 +322,27 @@ export const SignUp: React.FC = () => {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="varun@example.com"
+                    placeholder="varunk6325@gmail.com"
                     className="w-full pl-10 pr-3.5 py-2.5 rounded-[10px] border border-[#D3DDD8] dark:border-[#2A403C] bg-[#F1F5F2]/40 dark:bg-[#122523]/40 text-[#13231F] dark:text-[#E6EEEA] text-sm focus:bg-white dark:focus:bg-[#0E1E1D]"
                   />
                 </div>
+              </div>
+
+              <div className="space-y-1">
+                <label
+                  htmlFor="signup-password"
+                  className="text-xs font-medium text-[#55665F] dark:text-[#A6B8B0]"
+                >
+                  Password (Optional for magic link • Demo: Bharat@123 or Varun@123)
+                </label>
+                <input
+                  id="signup-password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Bharat@123 or Varun@123"
+                  className="w-full px-3.5 py-2.5 rounded-[10px] border border-[#D3DDD8] dark:border-[#2A403C] bg-[#F1F5F2]/40 dark:bg-[#122523]/40 text-[#13231F] dark:text-[#E6EEEA] text-sm focus:bg-white dark:focus:bg-[#0E1E1D]"
+                />
               </div>
 
               <button
@@ -371,7 +409,7 @@ export const SignUp: React.FC = () => {
               <div className="p-3 rounded-xl bg-[#F1F5F2] dark:bg-[#122523] border border-[#D3DDD8]/60 dark:border-[#2A403C] flex items-center justify-between">
                 <div>
                   <p className="text-xs font-semibold text-[#13231F] dark:text-[#E6EEEA]">
-                    Varun S. (varun@gmail.com)
+                    Varun K. (varunk6325@gmail.com)
                   </p>
                   <p className="text-[11px] text-[#55665F] dark:text-[#A6B8B0]">
                     New user journey (starts at Step 2)
@@ -381,9 +419,9 @@ export const SignUp: React.FC = () => {
                   type="button"
                   onClick={() => {
                     const { targetRoute } = login(
-                      'varun@gmail.com',
+                      'varunk6325@gmail.com',
                       role,
-                      'Varun S.',
+                      'Varun K.',
                       true
                     );
                     setShowGmailModal(false);
@@ -432,7 +470,7 @@ export const SignUp: React.FC = () => {
                   type="text"
                   value={gmailName}
                   onChange={(e) => setGmailName(e.target.value)}
-                  placeholder="e.g. Varun S."
+                  placeholder="e.g. Varun K."
                   className="w-full px-3 py-2 rounded-[10px] border border-[#D3DDD8] dark:border-[#2A403C] bg-white dark:bg-[#0E1E1D] text-sm"
                 />
               </div>
@@ -483,3 +521,4 @@ export const SignUp: React.FC = () => {
     </div>
   );
 };
+

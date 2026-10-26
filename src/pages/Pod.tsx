@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { InitialsAvatar } from '../components/InitialsAvatar';
 import {
@@ -175,7 +175,7 @@ export const Pod: React.FC = () => {
               <div className="flex items-center gap-2.5">
                 <InitialsAvatar firstName={prompt.subject_name} lastInitial={prompt.subject_initial} size="sm" />
                 <span className="text-[#13231F] dark:text-[#E6EEEA] font-medium">
-                  {prompt.subject_name} {prompt.subject_initial} hasn’t posted this week
+                  {prompt.subject_name} {prompt.subject_initial} hasnâ€™t posted this week
                 </span>
               </div>
 
@@ -212,7 +212,7 @@ export const Pod: React.FC = () => {
                   <span className="font-normal text-[#55665F] dark:text-[#A6B8B0]">(You)</span>
                 </p>
                 <p className="text-[11px] text-[#55665F] dark:text-[#A6B8B0] truncate">
-                  {currentMoveProfile?.from_role || 'Sales'} → {currentMoveProfile?.to_role || 'PM'}
+                  {currentMoveProfile?.from_role || 'Sales'} â†’ {currentMoveProfile?.to_role || 'PM'}
                 </p>
               </div>
             </div>
@@ -390,7 +390,7 @@ export const Pod: React.FC = () => {
 
             {sentMessageToast ? (
               <p className="text-xs text-[#2F7D5B] dark:text-[#5FBF8F] font-medium py-3">
-                ✓ Message sent directly to {personalMessageModalUser}.
+                âœ“ Message sent directly to {personalMessageModalUser}.
               </p>
             ) : (
               <form onSubmit={handleSendPersonalMessage} className="space-y-3">
@@ -425,3 +425,4 @@ export const Pod: React.FC = () => {
     </div>
   );
 };
+

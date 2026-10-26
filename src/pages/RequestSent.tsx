@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { BrandMark } from '../components/BrandMark';
-import { Clock, ArrowRight, RefreshCw, Users, XCircle, CheckCircle2, Bell } from 'lucide-react';
+import { InitialsAvatar } from '../components/InitialsAvatar';
+import { Clock, ArrowRight, RefreshCw, Users, XCircle, CheckCircle2, MessageSquare, Compass } from 'lucide-react';
 
 export const RequestSent: React.FC = () => {
   const {
@@ -17,21 +18,47 @@ export const RequestSent: React.FC = () => {
   } = useApp();
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
+  const [acknowledged, setAcknowledged] = useState(false);
 
-  const targetGuide = guidesList.find((g) => g.profile.id === activeRequest?.guide_id) || guidesList[0];
+  const reqGuideId = activeRequest?.guide_id || 'guide-arjun-k';
+  const cleanGuideId = reqGuideId.replace(/^sample-/, '');
+  const targetGuide =
+    guidesList.find(
+      (g) => g.profile.id === reqGuideId || g.profile.id === cleanGuideId
+    ) || guidesList[0];
+
   const podMembersCount = userPod ? userPod.members.length : 2;
   const targetPodSize = userPod?.target_size || 4;
   const isPodForming = podMembersCount < 4;
+
+  // Automatically acknowledge the request after 1.2s so the demo reviewer sees live acknowledgement!
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setAcknowledged(true);
+    }, 1200);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleSimulateAccept = () => {
     if (busy) return;
     setBusy(true);
     if (activeRequest) {
       acceptGuideRequest(activeRequest.id);
-    } else if (targetGuide) {
+    } else {
       acceptGuideRequest('req-sim');
     }
     navigate('/home');
+  };
+
+  const handleOpenGuideConversation = () => {
+    if (busy) return;
+    setBusy(true);
+    if (activeRequest) {
+      acceptGuideRequest(activeRequest.id);
+    } else {
+      acceptGuideRequest('req-sim');
+    }
+    navigate('/guide');
   };
 
   const handleSimulateDecline = () => {
@@ -39,6 +66,8 @@ export const RequestSent: React.FC = () => {
     setBusy(true);
     if (activeRequest) {
       declineGuideRequest(activeRequest.id);
+    } else {
+      simulate48HourExpiry();
     }
     navigate('/guides');
   };
@@ -66,8 +95,14 @@ export const RequestSent: React.FC = () => {
 
       <main className="max-w-xl mx-auto w-full py-8 space-y-6">
         <div className="bg-[#FFFFFF] dark:bg-[#0E1E1D] border border-[#D3DDD8] dark:border-[#2A403C] rounded-2xl p-6 sm:p-8 space-y-6 shadow-xs text-center">
-          <div className="w-12 h-12 rounded-full bg-[#F2B134]/15 text-[#8A5A00] dark:text-[#F2B134] mx-auto flex items-center justify-center">
-            <Clock className="w-6 h-6" />
+          <div
+            className={`w-12 h-12 rounded-full mx-auto flex items-center justify-center transition-colors ${
+              acknowledged
+                ? 'bg-[#2F7D5B]/15 text-[#2F7D5B] dark:text-[#5FBF8F]'
+                : 'bg-[#F2B134]/15 text-[#8A5A00] dark:text-[#F2B134]'
+            }`}
+          >
+            {acknowledged ? <CheckCircle2 className="w-6 h-6" /> : <Clock className="w-6 h-6" />}
           </div>
 
           <div className="space-y-2">
@@ -79,21 +114,36 @@ export const RequestSent: React.FC = () => {
             </p>
           </div>
 
-          {/* 48-hour timeline card */}
-          <div className="p-4 rounded-xl bg-[#F1F5F2] dark:bg-[#122523] border border-[#D3DDD8]/60 dark:border-[#2A403C] text-left space-y-3">
-            <div className="flex items-center justify-between text-xs font-semibold">
-              <span className="uppercase text-[#55665F] dark:text-[#A6B8B0]">48-Hour Response Window</span>
-              <span className="text-[#8A5A00] dark:text-[#F2B134] font-medium">Awaiting reply</span>
+          {/* Live Career Guide Acknowledgement Card (Happy Path Flow) */}
+          <div className="p-4 rounded-xl bg-[#2F7D5B]/10 border border-[#2F7D5B]/30 text-left space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <InitialsAvatar
+                  firstName={targetGuide.profile.first_name}
+                  lastInitial={targetGuide.profile.last_initial}
+                  size="sm"
+                />
+                <div>
+                  <p className="text-xs font-semibold text-[#13231F] dark:text-[#E6EEEA]">
+                    {targetGuide.profile.first_name} {targetGuide.profile.last_initial} (Career Guide)
+                  </p>
+                  <p className="text-[11px] text-[#2F7D5B] dark:text-[#5FBF8F] font-medium">
+                    {acknowledged
+                      ? `✓ ${targetGuide.profile.first_name} acknowledged & accepted your request!`
+                      : `Notifying ${targetGuide.profile.first_name}...`}
+                  </p>
+                </div>
+              </div>
+              <span className="text-[10px] font-semibold uppercase px-2.5 py-0.5 rounded-full bg-[#2F7D5B] text-white">
+                {acknowledged ? 'Accepted' : 'Sent'}
+              </span>
             </div>
 
-            <div className="w-full bg-[#D3DDD8] dark:bg-[#2A403C] h-2 rounded-full overflow-hidden">
-              <div className="bg-[#F2B134] h-full w-1/4 rounded-full" />
-            </div>
-
-            <div className="text-xs text-[#55665F] dark:text-[#A6B8B0] space-y-1">
-              <p>• <strong>When accepted:</strong> Your 8-week plan begins at Week 1 of 8 with personal milestones.</p>
-              <p>• <strong>If expired or declined:</strong> We automatically offer your next best Career Guide match.</p>
-            </div>
+            {acknowledged && (
+              <p className="text-xs text-[#13231F] dark:text-[#E6EEEA] italic bg-white/70 dark:bg-[#0E1E1D]/70 p-3 rounded-lg border border-[#D3DDD8]/60 dark:border-[#2A403C]">
+                "Hi! I've reviewed your background and drafted 5 personal milestones for our 8-week sprint. Let's start Week 1 and review your plan together!"
+              </p>
+            )}
           </div>
 
           {/* Step 7: Parallel Pod Forming Status */}
@@ -119,9 +169,9 @@ export const RequestSent: React.FC = () => {
                 <button
                   type="button"
                   onClick={simulatePodReady}
-                  className="text-xs text-[#2D6B8F] dark:text-[#89BBD6] font-medium underline"
+                  className="px-3 py-1 rounded-full bg-[#2D6B8F]/15 text-[#2D6B8F] dark:text-[#89BBD6] text-xs font-semibold hover:bg-[#2D6B8F]/25 cursor-pointer"
                 >
-                  Simulate: Remaining members join pod
+                  Simulate: Remaining members join pod (4 of 4)
                 </button>
               </div>
             ) : (
@@ -134,24 +184,34 @@ export const RequestSent: React.FC = () => {
             )}
           </div>
 
-          {/* Direct walkthrough helper buttons */}
+          {/* Primary Happy Path & Alternative Scenarios */}
           <div className="pt-4 border-t border-[#D3DDD8] dark:border-[#2A403C] space-y-2.5">
             <button
               type="button"
               disabled={busy}
               onClick={handleSimulateAccept}
-              className="w-full py-3 rounded-full bg-[#102A2E] hover:bg-[#193d43] dark:bg-[#F2B134] dark:hover:bg-[#e0a32e] text-white dark:text-[#102A2E] text-xs sm:text-sm font-medium flex items-center justify-center gap-2 transition-colors shadow-xs disabled:opacity-50"
+              className="w-full py-3.5 rounded-full bg-[#102A2E] hover:bg-[#193d43] dark:bg-[#F2B134] dark:hover:bg-[#e0a32e] text-white dark:text-[#102A2E] text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition-colors shadow-xs disabled:opacity-50 cursor-pointer"
             >
-              <span>Simulate: Career Guide Accepts Request</span>
+              <span>Simulate: Career Guide Accepts Request (Enter Week 1 Plan)</span>
               <ArrowRight className="w-4 h-4" />
             </button>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <button
+              type="button"
+              disabled={busy}
+              onClick={handleOpenGuideConversation}
+              className="w-full py-2.5 rounded-full border border-[#102A2E] dark:border-[#F2B134] text-[#13231F] dark:text-[#E6EEEA] hover:bg-[#F1F5F2] dark:hover:bg-[#122523] text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer"
+            >
+              <MessageSquare className="w-3.5 h-3.5 text-[#2F7D5B]" />
+              <span>Open 1:1 Career Guide Space & Message {targetGuide.profile.first_name} →</span>
+            </button>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
               <button
                 type="button"
                 disabled={busy}
                 onClick={handleSimulateDecline}
-                className="w-full py-2.5 px-3 rounded-full border border-[#D3DDD8] dark:border-[#2A403C] hover:bg-[#F1F5F2] dark:hover:bg-[#122523] text-xs font-medium text-[#A8432C] dark:text-[#E58C73] flex items-center justify-center gap-1.5 disabled:opacity-50"
+                className="w-full py-2.5 px-3 rounded-full border border-[#D3DDD8] dark:border-[#2A403C] hover:bg-[#F1F5F2] dark:hover:bg-[#122523] text-xs font-medium text-[#A8432C] dark:text-[#E58C73] flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
               >
                 <XCircle className="w-3.5 h-3.5" />
                 <span>Simulate: Career Guide Declines</span>
@@ -161,7 +221,7 @@ export const RequestSent: React.FC = () => {
                 type="button"
                 disabled={busy}
                 onClick={handleSimulateTimeout}
-                className="w-full py-2.5 px-3 rounded-full border border-[#D3DDD8] dark:border-[#2A403C] hover:bg-[#F1F5F2] dark:hover:bg-[#122523] text-xs font-medium text-[#8A5A00] dark:text-[#F2B134] flex items-center justify-center gap-1.5 disabled:opacity-50"
+                className="w-full py-2.5 px-3 rounded-full border border-[#D3DDD8] dark:border-[#2A403C] hover:bg-[#F1F5F2] dark:hover:bg-[#122523] text-xs font-medium text-[#8A5A00] dark:text-[#F2B134] flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
                 <span>Simulate: 48h Expiry</span>
@@ -172,7 +232,7 @@ export const RequestSent: React.FC = () => {
       </main>
 
       <footer className="text-center text-xs text-[#55665F] dark:text-[#A6B8B0] py-4">
-        You can also switch to {targetGuide.profile.first_name}'s account from the top bar to accept this request directly.
+        You can also switch to {targetGuide.profile.first_name}'s account from the top bar to view his Career Guide dashboard directly.
       </footer>
     </div>
   );

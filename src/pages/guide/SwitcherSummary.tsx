@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { InitialsAvatar } from '../../components/InitialsAvatar';
@@ -52,7 +52,7 @@ export const SwitcherSummary: React.FC = () => {
   );
 
   const sortedMilestones = sprintPlan
-    ? [...sprintPlan.milestones].sort((a, b) => a.order - b.order)
+    ? [...sprintPlan.milestones].sort((a, b) => (a.week ?? (a as any).target_week ?? 1) - (b.week ?? (b as any).target_week ?? 1))
     : [];
 
   const handleAddMilestone = (e: React.FormEvent) => {
@@ -223,7 +223,7 @@ export const SwitcherSummary: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => {
-                        updateMilestone(m.id, { title: editingTitle, target_week: editingWeek });
+                        updateMilestone(m.id, { title: editingTitle, week: editingWeek });
                         setEditingMilestoneId(null);
                       }}
                       className="px-3 py-1.5 rounded-full bg-[#102A2E] dark:bg-[#F2B134] text-white dark:text-[#102A2E] text-xs font-medium"
@@ -235,7 +235,7 @@ export const SwitcherSummary: React.FC = () => {
                   <>
                     <div className="space-y-0.5">
                       <span className="text-[10px] font-semibold uppercase tracking-wider text-[#8A5A00] dark:text-[#F2B134]">
-                        Week {m.target_week}
+                        Week {m.week ?? (m as any).target_week ?? 1}
                       </span>
                       <p className="text-xs sm:text-sm font-medium text-[#13231F] dark:text-[#E6EEEA]">
                         {m.title}
@@ -266,7 +266,7 @@ export const SwitcherSummary: React.FC = () => {
                         onClick={() => {
                           setEditingMilestoneId(m.id);
                           setEditingTitle(m.title);
-                          setEditingWeek(m.target_week);
+                          setEditingWeek(m.week ?? (m as any).target_week ?? 1);
                         }}
                         className="p-1.5 rounded-lg border border-[#D3DDD8] dark:border-[#2A403C] hover:bg-white dark:hover:bg-[#0E1E1D]"
                         title="Edit milestone"
@@ -327,7 +327,7 @@ export const SwitcherSummary: React.FC = () => {
             </h2>
             {goalSuggestedToast && (
               <span className="text-xs text-[#2F7D5B] dark:text-[#5FBF8F] font-medium">
-                ✓ Suggested to switcher!
+                âœ“ Suggested to switcher!
               </span>
             )}
           </div>
@@ -363,7 +363,7 @@ export const SwitcherSummary: React.FC = () => {
         {/* Current Goals */}
         <div className="space-y-2.5 pt-2 border-t border-[#D3DDD8]/60 dark:border-[#2A403C]">
           <h2 className="text-xs font-semibold uppercase text-[#55665F] dark:text-[#A6B8B0]">
-            Switcher’s Active Weekly Goals
+            Switcherâ€™s Active Weekly Goals
           </h2>
           <div className="space-y-2">
             {goals.map((g) => (
@@ -404,3 +404,4 @@ export const SwitcherSummary: React.FC = () => {
     </div>
   );
 };
+

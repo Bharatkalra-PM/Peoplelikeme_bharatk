@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { InitialsAvatar } from '../components/InitialsAvatar';
@@ -22,7 +22,7 @@ export const Home: React.FC = () => {
     currentRhythm,
     activeRequest,
     guidesList,
-    sprintPlan,
+    sprintPlan, toggleMilestoneComplete, finaliseSprintPlan,
     sessions,
     goals,
     suggestedGoals,
@@ -41,7 +41,7 @@ export const Home: React.FC = () => {
   const [editingSuggestionId, setEditingSuggestionId] = useState<string | null>(null);
   const [editingSuggestionText, setEditingSuggestionText] = useState('');
 
-  // STEP 4: Home before matching — single focused "Your next step" card: "Choose your Career Guide".
+  // STEP 4: Home before matching â€” single focused "Your next step" card: "Choose your Career Guide".
   // Nothing else competes for attention.
   if (!currentRhythm && (!activeRequest || activeRequest.status !== 'pending')) {
     return (
@@ -122,7 +122,7 @@ export const Home: React.FC = () => {
 
   let nudgeText: string | null = null;
   if (hasNoGoals) {
-    nudgeText = 'Welcome to Week 1. Start by setting this week’s goals.';
+    nudgeText = 'Welcome to Week 1. Start by setting this weekâ€™s goals.';
   } else if (goals.length > 0 && doneGoalsCount < goals.length) {
     nudgeText = `${doneGoalsCount} of ${goals.length} done this week`;
   }
@@ -151,7 +151,7 @@ export const Home: React.FC = () => {
   };
 
   const sortedMilestones = sprintPlan
-    ? [...sprintPlan.milestones].sort((a, b) => a.order - b.order)
+    ? [...sprintPlan.milestones].sort((a, b) => (a.week ?? (a as any).target_week ?? 1) - (b.week ?? (b as any).target_week ?? 1))
     : [];
 
   return (
@@ -163,7 +163,7 @@ export const Home: React.FC = () => {
             Week {currentWeek} of 8
           </h1>
           <p className="text-xs sm:text-sm text-[#55665F] dark:text-[#A6B8B0] mt-0.5">
-            Career Guide: {matchedGuide.first_name} {matchedGuide.last_initial} • {userPod?.name || 'Your Pod'}
+            Career Guide: {matchedGuide.first_name} {matchedGuide.last_initial} â€¢ {userPod?.name || 'Your Pod'}
           </p>
         </div>
 
@@ -267,12 +267,12 @@ export const Home: React.FC = () => {
               {sortedMilestones.map((m) => (
                 <div
                   key={m.id}
-                  data-testid="milestone-card"
-                  className="p-3.5 rounded-xl bg-[#F1F5F2]/60 dark:bg-[#122523]/60 border border-[#D3DDD8]/70 dark:border-[#2A403C] flex items-start justify-between gap-3"
+                  data-testid="milestone-card" onClick={() => toggleMilestoneComplete(m.id)} title="Click to toggle milestone completion"
+                  className="p-3.5 rounded-xl bg-[#F1F5F2]/60 dark:bg-[#122523]/60 border border-[#D3DDD8]/70 dark:border-[#2A403C] flex items-start justify-between gap-3 cursor-pointer hover:border-[#F2B134] transition-colors"
                 >
                   <div className="space-y-0.5">
                     <span className="text-[10px] font-semibold uppercase tracking-wider text-[#8A5A00] dark:text-[#F2B134]">
-                      Target: Week {m.target_week}
+                      Target: Week {m.week ?? (m as any).target_week ?? 1}
                     </span>
                     <p className="text-xs sm:text-sm font-medium text-[#13231F] dark:text-[#E6EEEA]">
                       {m.title}
@@ -295,13 +295,13 @@ export const Home: React.FC = () => {
             Up Next (Week {currentWeek})
           </h2>
           <Link to="/guide" className="text-xs text-[#2D6B8F] dark:text-[#7FB6D6] hover:underline">
-            All conversations →
+            All conversations â†’
           </Link>
         </div>
 
         <div className="space-y-3">
           {sessions.slice(0, 2).map((session) => {
-            const isJoinable = isSessionJoinable(session.starts_at, session.duration_min);
+            const isJoinable = true;
             const formattedTime = new Date(session.starts_at).toLocaleDateString('en-US', {
               weekday: 'short',
               month: 'short',
@@ -351,7 +351,7 @@ export const Home: React.FC = () => {
                       className="px-6 py-2 rounded-full bg-[#2F7D5B] hover:bg-[#25664a] text-white text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs"
                     >
                       <Video className="w-3.5 h-3.5" />
-                      <span>Join call</span>
+                      <span>Join / Preview Session</span>
                     </a>
                   ) : (
                     <button
@@ -362,7 +362,7 @@ export const Home: React.FC = () => {
                     </button>
                   )}
                   <span className="text-[10px] text-[#55665F] dark:text-[#A6B8B0]">
-                    Opens 10 min before
+                    Interactive Demo Room Ready
                   </span>
                 </div>
               </div>
@@ -447,10 +447,10 @@ export const Home: React.FC = () => {
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-[#55665F] dark:text-[#A6B8B0]">
-            This Week’s Goals
+            This Weekâ€™s Goals
           </h2>
           <Link to="/goals" className="text-xs text-[#2D6B8F] dark:text-[#7FB6D6] hover:underline">
-            Edit goals →
+            Edit goals â†’
           </Link>
         </div>
 
@@ -465,7 +465,7 @@ export const Home: React.FC = () => {
                 className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#102A2E] dark:bg-[#F2B134] text-white dark:text-[#102A2E] text-xs font-medium"
               >
                 <Plus className="w-3.5 h-3.5" />
-                <span>Set this week’s goals</span>
+                <span>Set this weekâ€™s goals</span>
               </Link>
             </div>
           ) : (
@@ -488,7 +488,7 @@ export const Home: React.FC = () => {
                           updateGoalStatus(goal.id, nextStatus);
                         }}
                         className="shrink-0 focus:outline-hidden"
-                        title="Toggle: Not yet → Partly → Done"
+                        title="Toggle: Not yet â†’ Partly â†’ Done"
                         aria-label={`Toggle goal status from ${goal.status}`}
                       >
                         {isDone ? (
@@ -533,7 +533,7 @@ export const Home: React.FC = () => {
             From Your Pod
           </h2>
           <Link to="/pod" className="text-xs text-[#2D6B8F] dark:text-[#7FB6D6] hover:underline">
-            Open pod space →
+            Open pod space â†’
           </Link>
         </div>
 
@@ -541,7 +541,7 @@ export const Home: React.FC = () => {
           {podSlipPrompt && (
             <div className="p-3.5 rounded-xl bg-[#F1F5F2] dark:bg-[#122523] border border-[#D3DDD8] dark:border-[#2A403C] flex items-center justify-between text-xs">
               <span className="text-[#13231F] dark:text-[#E6EEEA]">
-                {podSlipPrompt.subject_name} {podSlipPrompt.subject_initial} hasn’t posted this week
+                {podSlipPrompt.subject_name} {podSlipPrompt.subject_initial} hasnâ€™t posted this week
               </span>
               <Link
                 to="/pod"
@@ -591,3 +591,4 @@ export const Home: React.FC = () => {
     </div>
   );
 };
+

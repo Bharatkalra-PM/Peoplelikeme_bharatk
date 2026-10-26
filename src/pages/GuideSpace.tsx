@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { InitialsAvatar } from '../components/InitialsAvatar';
 import { formatMoveLine } from '../lib/matching';
@@ -15,7 +15,8 @@ import {
 } from 'lucide-react';
 
 export const GuideSpace: React.FC = () => {
-  const { currentRhythm, sessions, guidesList, sprintPlan, rateConversation, conversationRatings } = useApp();
+  const { currentRhythm, sessions, guidesList, sprintPlan, toggleMilestoneComplete, finaliseSprintPlan, rateConversation, conversationRatings, guideMessages, sendGuideMessage } = useApp();
+  const [chatText, setChatText] = useState('');
 
   const currentWeek = currentRhythm?.week || 1;
   const guideItem = guidesList.find((g) => g.profile.id === currentRhythm?.guide_id) || guidesList[0];
@@ -111,7 +112,7 @@ export const GuideSpace: React.FC = () => {
                 </span>
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#F2B134]/15 text-[#8A5A00] dark:text-[#F2B134] font-semibold flex items-center gap-1">
                   <Star className="w-3 h-3 fill-current" />
-                  <span>{(guide.rating ?? 4.8).toFixed(1)} · Guided {guide.guided_count ?? 0} people</span>
+                  <span>{Number(guide.rating_avg ?? (guide as any).rating ?? 4.8).toFixed(1)} Â· Guided {guide.guided_count ?? 0} people</span>
                 </span>
               </div>
               <p className="text-xs text-[#55665F] dark:text-[#A6B8B0] flex items-center gap-1 mt-0.5">
@@ -131,6 +132,34 @@ export const GuideSpace: React.FC = () => {
           {moveProf.story}
         </p>
       </div>
+
+            {/* 1:1 Direct Messages with Career Guide */}
+      <section className="space-y-3" data-testid="guide-messages-section">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-[#55665F] dark:text-[#A6B8B0]">
+            Direct Messages with {guide.first_name} (Career Guide Acknowledged)
+          </h2>
+          {sprintPlan && sprintPlan.status !== 'finalised' && (
+            <button type="button" onClick={finaliseSprintPlan} className="px-3 py-1 rounded-full bg-[#2F7D5B] text-white text-xs font-semibold cursor-pointer">
+              Mark 8-Week Plan Finalised
+            </button>
+          )}
+        </div>
+        <div className="bg-[#FFFFFF] dark:bg-[#0E1E1D] border border-[#D3DDD8] dark:border-[#2A403C] rounded-2xl p-5 space-y-4 shadow-xs">
+          <div className="space-y-2.5 max-h-64 overflow-y-auto">
+            {guideMessages.map((msg) => (
+              <div key={msg.id} className={p-3 rounded-xl text-xs }>
+                <span className="font-semibold block text-[10px] opacity-75 mb-0.5">{msg.sender_name}</span>
+                <p>{msg.text}</p>
+              </div>
+            ))}
+          </div>
+          <form onSubmit={(e) => { e.preventDefault(); if (!chatText.trim()) return; sendGuideMessage(chatText.trim()); setChatText(''); }} className="flex gap-2 pt-2 border-t border-[#D3DDD8]/60 dark:border-[#2A403C]">
+            <input type="text" value={chatText} onChange={(e) => setChatText(e.target.value)} placeholder={Message  about your Week  goals...} className="flex-1 px-3.5 py-2 rounded-full border border-[#D3DDD8] dark:border-[#2A403C] bg-[#F1F5F2]/40 dark:bg-[#122523]/40 text-xs" />
+            <button type="submit" className="px-5 py-2 rounded-full bg-[#102A2E] dark:bg-[#F2B134] text-white dark:text-[#102A2E] text-xs font-semibold cursor-pointer">Send</button>
+          </form>
+        </div>
+      </section>
 
       {/* Shared Plan Status */}
       {sprintPlan && (
@@ -155,14 +184,14 @@ export const GuideSpace: React.FC = () => {
 
           <div className="bg-[#FFFFFF] dark:bg-[#0E1E1D] border border-[#D3DDD8] dark:border-[#2A403C] rounded-2xl p-5 grid grid-cols-1 sm:grid-cols-2 gap-3 shadow-xs">
             {[...sprintPlan.milestones]
-              .sort((a, b) => a.order - b.order)
+              .sort((a, b) => (a.week ?? (a as any).target_week ?? 1) - (b.week ?? (b as any).target_week ?? 1))
               .map((m) => (
                 <div
-                  key={m.id}
-                  className="p-3 rounded-xl bg-[#F1F5F2]/60 dark:bg-[#122523]/60 border border-[#D3DDD8]/70 dark:border-[#2A403C]"
+                  key={m.id} onClick={() => toggleMilestoneComplete(m.id)}
+                  className="p-3 rounded-xl bg-[#F1F5F2]/60 dark:bg-[#122523]/60 border border-[#D3DDD8]/70 dark:border-[#2A403C] cursor-pointer hover:border-[#F2B134] transition-colors"
                 >
                   <span className="text-[10px] font-semibold uppercase text-[#8A5A00] dark:text-[#F2B134]">
-                    Week {m.target_week}
+                    Week {m.week ?? (m as any).target_week ?? 1} {m.completed ? '✓' : ''}
                   </span>
                   <p className="text-xs font-medium text-[#13231F] dark:text-[#E6EEEA] mt-0.5">{m.title}</p>
                 </div>
@@ -248,7 +277,7 @@ export const GuideSpace: React.FC = () => {
                 Week {currentWeek}: Conversation with {guide.first_name}
               </p>
               <p className="text-xs text-[#55665F] dark:text-[#A6B8B0]">
-                Private feedback — feeds {guide.first_name}’s rating and ranking.
+                Private feedback â€” feeds {guide.first_name}â€™s rating and ranking.
               </p>
             </div>
             <span className="px-2.5 py-1 rounded-full bg-[#2F7D5B]/10 text-[#2F7D5B] dark:text-[#5FBF8F] font-medium text-[11px] flex items-center gap-1">
@@ -260,7 +289,7 @@ export const GuideSpace: React.FC = () => {
           {ratingSubmitted || conversationRatings.some((r) => r.guide_id === guide.id && r.week === currentWeek) ? (
             <div className="p-3.5 rounded-xl bg-[#2F7D5B]/10 text-[#2F7D5B] dark:text-[#5FBF8F] text-xs font-medium flex items-center gap-2">
               <CheckCircle className="w-4 h-4" />
-              <span>Thank you! Your private rating has been recorded and updated {guide.first_name}’s rating.</span>
+              <span>Thank you! Your private rating has been recorded and updated {guide.first_name}â€™s rating.</span>
             </div>
           ) : (
             <form onSubmit={handleSubmitRating} className="space-y-4 pt-2 border-t border-[#D3DDD8]/60 dark:border-[#2A403C]">
@@ -321,3 +350,4 @@ export const GuideSpace: React.FC = () => {
     </div>
   );
 };
+

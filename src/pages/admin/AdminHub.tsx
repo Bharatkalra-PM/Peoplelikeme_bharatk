@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { Link } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { InitialsAvatar } from '../../components/InitialsAvatar';
@@ -84,7 +84,7 @@ export const AdminHub: React.FC = () => {
             <span>Career Guide Applications ({guideApplications.length})</span>
           </h2>
           <span className="text-xs text-[#55665F] dark:text-[#A6B8B0]">
-            Automatic checks: LinkedIn connected • Email verified • Move found (&ge;2y earlier, &ge;1y current)
+            Automatic checks: LinkedIn connected â€¢ Email verified â€¢ Move found (&ge;2y earlier, &ge;1y current)
           </span>
         </div>
 
@@ -128,11 +128,11 @@ export const AdminHub: React.FC = () => {
                           {app.full_name}
                         </h3>
                         <span className="text-xs text-[#55665F] dark:text-[#A6B8B0]">
-                          ({app.email} • {app.city})
+                          ({app.email} â€¢ {app.city})
                         </span>
                       </div>
                       <p className="text-xs font-medium text-[#13231F] dark:text-[#E6EEEA] mt-0.5">
-                        {app.from_role} ({app.years_in_earlier_role} yrs) → {app.to_role} ({app.years_in_current_role} yrs) • Took {app.how_long_it_took}
+                        {app.from_role} ({app.years_in_earlier_role} yrs) â†’ {app.to_role} ({app.years_in_current_role} yrs) â€¢ Took {app.how_long_it_took}
                       </p>
                     </div>
                   </div>
@@ -148,48 +148,48 @@ export const AdminHub: React.FC = () => {
                 {/* Automatic Checks Row */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 p-3.5 rounded-xl bg-[#F1F5F2] dark:bg-[#122523] border border-[#D3DDD8]/60 dark:border-[#2A403C] text-xs">
                   <div className="flex items-center gap-2">
-                    {app.linkedin_connected ? (
+                    {(app.checks?.linkedin_connected ?? (app as any).linkedin_connected) ? (
                       <CheckCircle2 className="w-4 h-4 text-[#2F7D5B] dark:text-[#5FBF8F] shrink-0" />
                     ) : (
                       <XCircle className="w-4 h-4 text-[#A8432C] dark:text-[#E58C73] shrink-0" />
                     )}
                     <span className="font-medium">
-                      LinkedIn connected: {app.linkedin_connected ? 'Yes' : 'No'}
+                      LinkedIn connected: {(app.checks?.linkedin_connected ?? (app as any).linkedin_connected) ? 'Yes' : 'No'}
                     </span>
                   </div>
 
                   <div className="flex items-center gap-2">
-                    {app.work_email_verified ? (
+                    {(app.checks?.email_verified ?? (app as any).work_email_verified) ? (
                       <CheckCircle2 className="w-4 h-4 text-[#2F7D5B] dark:text-[#5FBF8F] shrink-0" />
                     ) : (
                       <XCircle className="w-4 h-4 text-[#A8432C] dark:text-[#E58C73] shrink-0" />
                     )}
                     <span className="font-medium">
-                      Email verified: {app.work_email_verified ? 'Yes' : 'No'}
+                      Email verified: {(app.checks?.email_verified ?? (app as any).work_email_verified) ? 'Yes' : 'No'}
                     </span>
                   </div>
 
                   <div className="flex items-center gap-2">
-                    {app.move_found_check ? (
+                    {(app.checks?.move_found ?? (app as any).move_found_check) ? (
                       <CheckCircle2 className="w-4 h-4 text-[#2F7D5B] dark:text-[#5FBF8F] shrink-0" />
                     ) : (
                       <AlertTriangle className="w-4 h-4 text-[#A8432C] dark:text-[#E58C73] shrink-0" />
                     )}
                     <span className="font-medium">
-                      Move found: {app.move_found_check ? 'Verified (≥2y / ≥1y)' : 'Flagged (<2y or <1y)'}
+                      Move found: {(app.checks?.move_found ?? (app as any).move_found_check) ? 'Verified (â‰¥2y / â‰¥1y)' : 'Flagged (<2y or <1y)'}
                     </span>
                   </div>
                 </div>
 
                 {/* Mismatch Flags if any */}
-                {app.mismatch_flags.length > 0 && (
+                {(app.checks?.mismatch_flags ?? (app as any).mismatch_flags ?? []).length > 0 && (
                   <div className="p-3 rounded-xl bg-[#A8432C]/10 border border-[#A8432C]/30 text-xs text-[#A8432C] dark:text-[#E58C73] space-y-1">
                     <span className="font-semibold flex items-center gap-1.5">
                       <AlertTriangle className="w-3.5 h-3.5" />
                       <span>Automatic Check Flags:</span>
                     </span>
                     <ul className="list-disc pl-5 space-y-0.5">
-                      {app.mismatch_flags.map((flag, i) => (
+                      {(app.checks?.mismatch_flags ?? (app as any).mismatch_flags ?? []).map((flag, i) => (
                         <li key={i}>{flag}</li>
                       ))}
                     </ul>
@@ -203,10 +203,10 @@ export const AdminHub: React.FC = () => {
                       Your move, in your words
                     </span>
                     <p className="text-[#13231F] dark:text-[#E6EEEA] leading-relaxed">
-                      "{app.story_in_words}"
+                      "{(app.story ?? (app as any).story_in_words)}"
                     </p>
                     <p className="text-[#55665F] dark:text-[#A6B8B0] pt-1">
-                      <strong>What they'd do differently:</strong> {app.what_do_differently}
+                      <strong>What they'd do differently:</strong> {(app.what_would_do_differently ?? (app as any).what_do_differently)}
                     </p>
                   </div>
 
@@ -216,7 +216,7 @@ export const AdminHub: React.FC = () => {
                       <span>Uploaded CV ({app.cv_file_name})</span>
                     </span>
                     <p className="text-[#13231F] dark:text-[#E6EEEA] leading-relaxed">
-                      {app.cv_text_summary}
+                      {(app.cv_text ?? (app as any).cv_text_summary)}
                     </p>
                   </div>
                 </div>
@@ -326,3 +326,4 @@ export const AdminHub: React.FC = () => {
     </div>
   );
 };
+
