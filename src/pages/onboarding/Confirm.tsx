@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
-import { BrandMark } from '../../components/BrandMark';
+import { OnboardingProgressBar } from '../../components/OnboardingProgressBar';
 import { requestDraftMoveProfile } from '../../lib/gemini';
 import { formatMoveLine } from '../../lib/matching';
-import { MoveProfile } from '../../types';
-import { ArrowLeft, ArrowRight, Sparkles, Loader2, Check } from 'lucide-react';
+import { GenderOption, MoveProfile } from '../../types';
+import { ArrowLeft, ArrowRight, Sparkles, Loader2, Check, Info } from 'lucide-react';
 
 export const Confirm: React.FC = () => {
   const {
@@ -20,31 +20,43 @@ export const Confirm: React.FC = () => {
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(!draftedProfile);
+  const [usedFallback, setUsedFallback] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
   const [profile, setProfile] = useState<MoveProfile>(() => {
     return (
       draftedProfile || {
-        user_id: currentUser?.id || 'switcher-priya-m',
-        from_role: storyAnswers?.coming_from?.answer || 'B2B SaaS Sales Lead',
-        from_field: 'Sales & Solutions',
+        user_id: currentUser?.id || 'switcher-varun',
+        from_role:
+          detailChips.from_role ||
+          storyAnswers?.coming_from?.answer ||
+          'B2B Sales Lead',
+        from_field: detailChips.from_field || 'Sales & Consumer Goods',
         from_company_type: 'Growth-stage tech',
-        to_role: 'Product Manager',
-        years_experience: 5,
+        to_role:
+          detailChips.to_role ||
+          storyAnswers?.going_to?.answer ||
+          'Product Manager',
+        years_experience: detailChips.years_experience ?? 5,
         months_since_leaving: null,
         dependants: detailChips.dependants || 'None',
         priority: detailChips.priority || 'Speed to role',
-        availability: detailChips.availability || ['Weekday evenings'],
+        availability: detailChips.availability || [
+          'Weekday evenings (6:00 PM – 8:00 PM)',
+        ],
         constraints: detailChips.constraints || [],
         went_back: false,
         years_since_move: null,
         story:
           storyAnswers?.pushing_change?.answer ||
-          'Spent 5 years closing enterprise software deals and solving customer friction; transitioning into full-time product management.',
+          'Spent 5 years closing software and consumer deals and solving customer friction; transitioning into full-time product management.',
         confirmed_at: null,
+        preferred_guide_gender:
+          detailChips.preferred_guide_gender || 'No preference',
       }
     );
   });
 
-  // Call Gemini to draft profile
   useEffect(() => {
     let isMounted = true;
     if (!draftedProfile) {
@@ -62,24 +74,37 @@ export const Confirm: React.FC = () => {
         linkedInText: backgroundInfo.linkedInText,
         detailChips,
       })
-        .then((draft) => {
+        .then(({ draft, usedFallback: fb }) => {
           if (!isMounted) return;
+          setUsedFallback(fb);
           const merged: MoveProfile = {
-            user_id: currentUser?.id || 'switcher-priya-m',
-            from_role: draft.from_role || 'B2B SaaS Sales',
-            from_field: draft.from_field || 'Sales',
+            user_id: currentUser?.id || 'switcher-varun',
+            from_role:
+              detailChips.from_role || draft.from_role || 'B2B Sales Lead',
+            from_field: detailChips.from_field || draft.from_field || 'Sales',
             from_company_type: draft.from_company_type || 'Growth-stage startup',
-            to_role: draft.to_role || 'Product Manager',
-            years_experience: draft.years_experience ?? 5,
+            to_role:
+              detailChips.to_role || draft.to_role || 'Product Manager',
+            years_experience:
+              detailChips.years_experience ?? draft.years_experience ?? 5,
             months_since_leaving: draft.months_since_leaving ?? null,
             dependants: draft.dependants || detailChips.dependants || 'None',
             priority: draft.priority || detailChips.priority || 'Speed to role',
-            availability: draft.availability?.length ? draft.availability : detailChips.availability,
-            constraints: draft.constraints?.length ? draft.constraints : detailChips.constraints,
+            availability: draft.availability?.length
+              ? draft.availability
+              : detailChips.availability,
+            constraints: draft.constraints?.length
+              ? draft.constraints
+              : detailChips.constraints,
             went_back: false,
             years_since_move: null,
-            story: draft.story || 'Making a focused move based on customer problem-solving experience.',
+            story:
+              draft.story ||
+              storyAnswers?.pushing_change?.answer ||
+              'Making a focused move based on customer problem-solving experience.',
             confirmed_at: null,
+            preferred_guide_gender:
+              detailChips.preferred_guide_gender || 'No preference',
           };
           setProfile(merged);
           setDraftedProfile(merged);
@@ -94,34 +119,46 @@ export const Confirm: React.FC = () => {
   }, []);
 
   const handleConfirm = () => {
+    if (isSaving) return;
+    setIsSaving(true);
     confirmMoveProfile(profile);
-    navigate('/matching');
+    // Navigate to Step 4: Dashboard before matching
+    navigate('/home');
   };
 
-  const moveLine = formatMoveLine(profile.from_role, profile.to_role, false);
+  const moveLine = formatMoveLine(
+    profile.from_role,
+    profile.to_role,
+    false,
+    profile.from_field
+  );
 
   return (
     <div className="min-h-screen bg-[#F1F5F2] dark:bg-[#122523] text-[#13231F] dark:text-[#E6EEEA] p-4 sm:p-6 lg:p-8">
       <div className="max-w-2xl mx-auto space-y-8">
-        <header className="flex items-center justify-between pb-4 border-b border-[#D3DDD8] dark:border-[#2A403C]">
-          <BrandMark />
-          <span className="text-xs font-medium text-[#55665F] dark:text-[#A6B8B0]">
-            Step 4 of 4
-          </span>
-        </header>
+        <OnboardingProgressBar step={4} label="Confirm your move" />
 
         <div className="space-y-2">
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#8A5A00] dark:text-[#F2B134]">
             <Sparkles className="w-4 h-4" />
-            <span>AI Drafted Profile</span>
+            <span>Drafted Profile</span>
           </div>
           <h1 className="font-heading text-2xl sm:text-3xl font-normal text-[#13231F] dark:text-[#E6EEEA]">
-            Confirm your move profile
+            Confirm your move
           </h1>
           <p className="text-sm text-[#55665F] dark:text-[#A6B8B0]">
-            Review and adjust what our model drafted from your answers. This is the only profile fact sheet used for matching.
+            Review and edit every field below. This profile is used to match you with approved Career Guides and your peer pod.
           </p>
         </div>
+
+        {usedFallback && (
+          <div className="p-3.5 rounded-xl bg-[#F2B134]/15 border border-[#F2B134]/40 text-xs text-[#13231F] dark:text-[#E6EEEA] flex items-center gap-2">
+            <Info className="w-4 h-4 text-[#8A5A00] dark:text-[#F2B134] shrink-0" />
+            <span>
+              We prefilled what we know from your answers. Please review and complete any fields below.
+            </span>
+          </div>
+        )}
 
         {loading ? (
           <div className="bg-[#FFFFFF] dark:bg-[#0E1E1D] border border-[#D3DDD8] dark:border-[#2A403C] rounded-2xl p-12 text-center space-y-3">
@@ -147,14 +184,16 @@ export const Confirm: React.FC = () => {
               </div>
               <span className="text-xs px-2.5 py-1 rounded-full bg-[#2F7D5B]/10 text-[#2F7D5B] dark:text-[#5FBF8F] font-medium flex items-center gap-1">
                 <Check className="w-3.5 h-3.5" />
-                Ready to match
+                Editable
               </span>
             </div>
 
             {/* Editable Form */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
               <div className="space-y-1">
-                <label className="text-xs font-medium text-[#55665F] dark:text-[#A6B8B0]">Moving from role</label>
+                <label className="text-xs font-medium text-[#55665F] dark:text-[#A6B8B0]">
+                  Current / moving from role
+                </label>
                 <input
                   type="text"
                   value={profile.from_role}
@@ -164,7 +203,9 @@ export const Confirm: React.FC = () => {
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-medium text-[#55665F] dark:text-[#A6B8B0]">Moving to role</label>
+                <label className="text-xs font-medium text-[#55665F] dark:text-[#A6B8B0]">
+                  Target / moving to role
+                </label>
                 <input
                   type="text"
                   value={profile.to_role}
@@ -174,7 +215,9 @@ export const Confirm: React.FC = () => {
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-medium text-[#55665F] dark:text-[#A6B8B0]">Field / Industry</label>
+                <label className="text-xs font-medium text-[#55665F] dark:text-[#A6B8B0]">
+                  Industry
+                </label>
                 <input
                   type="text"
                   value={profile.from_field}
@@ -184,29 +227,42 @@ export const Confirm: React.FC = () => {
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-medium text-[#55665F] dark:text-[#A6B8B0]">Company environment</label>
+                <label className="text-xs font-medium text-[#55665F] dark:text-[#A6B8B0]">
+                  Company environment
+                </label>
                 <input
                   type="text"
                   value={profile.from_company_type}
-                  onChange={(e) => setProfile({ ...profile, from_company_type: e.target.value })}
+                  onChange={(e) =>
+                    setProfile({ ...profile, from_company_type: e.target.value })
+                  }
                   className="w-full px-3 py-2 rounded-[10px] border border-[#D3DDD8] dark:border-[#2A403C] bg-white dark:bg-[#0E1E1D] text-[#13231F] dark:text-[#E6EEEA]"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-medium text-[#55665F] dark:text-[#A6B8B0]">Years of prior experience</label>
+                <label className="text-xs font-medium text-[#55665F] dark:text-[#A6B8B0]">
+                  Years of experience
+                </label>
                 <input
                   type="number"
                   min={0}
-                  max={40}
+                  max={45}
                   value={profile.years_experience}
-                  onChange={(e) => setProfile({ ...profile, years_experience: parseInt(e.target.value) || 0 })}
+                  onChange={(e) =>
+                    setProfile({
+                      ...profile,
+                      years_experience: parseInt(e.target.value) || 0,
+                    })
+                  }
                   className="w-full px-3 py-2 rounded-[10px] border border-[#D3DDD8] dark:border-[#2A403C] bg-white dark:bg-[#0E1E1D] text-[#13231F] dark:text-[#E6EEEA]"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-medium text-[#55665F] dark:text-[#A6B8B0]">Primary priority</label>
+                <label className="text-xs font-medium text-[#55665F] dark:text-[#A6B8B0]">
+                  What matters most
+                </label>
                 <input
                   type="text"
                   value={profile.priority}
@@ -215,8 +271,10 @@ export const Confirm: React.FC = () => {
                 />
               </div>
 
-              <div className="space-y-1 sm:col-span-2">
-                <label className="text-xs font-medium text-[#55665F] dark:text-[#A6B8B0]">Dependants setup</label>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-[#55665F] dark:text-[#A6B8B0]">
+                  Who depends on you
+                </label>
                 <input
                   type="text"
                   value={profile.dependants}
@@ -225,8 +283,31 @@ export const Confirm: React.FC = () => {
                 />
               </div>
 
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-[#55665F] dark:text-[#A6B8B0]">
+                  Preferred Career Guide gender
+                </label>
+                <select
+                  value={profile.preferred_guide_gender || 'No preference'}
+                  onChange={(e) =>
+                    setProfile({
+                      ...profile,
+                      preferred_guide_gender: e.target.value as GenderOption,
+                    })
+                  }
+                  className="w-full px-3 py-2 rounded-[10px] border border-[#D3DDD8] dark:border-[#2A403C] bg-white dark:bg-[#0E1E1D] text-[#13231F] dark:text-[#E6EEEA]"
+                >
+                  <option value="No preference">No preference</option>
+                  <option value="Female">Female</option>
+                  <option value="Male">Male</option>
+                  <option value="Non-binary">Non-binary</option>
+                </select>
+              </div>
+
               <div className="space-y-1 sm:col-span-2">
-                <label className="text-xs font-medium text-[#55665F] dark:text-[#A6B8B0]">Summary story</label>
+                <label className="text-xs font-medium text-[#55665F] dark:text-[#A6B8B0]">
+                  Summary story
+                </label>
                 <textarea
                   rows={3}
                   value={profile.story || ''}
@@ -243,7 +324,7 @@ export const Confirm: React.FC = () => {
           <button
             type="button"
             onClick={() => navigate('/onboarding/details')}
-            className="px-4 py-2.5 rounded-full border border-[#D3DDD8] dark:border-[#2A403C] text-xs font-medium text-[#55665F] dark:text-[#A6B8B0] hover:text-[#13231F] dark:hover:text-[#E6EEEA] flex items-center gap-1.5"
+            className="px-4 py-2.5 rounded-full border border-[#D3DDD8] dark:border-[#2A403C] text-xs font-medium text-[#55665F] dark:text-[#A6B8B0] hover:text-[#13231F] dark:hover:text-[#E6EEEA] flex items-center gap-1.5 cursor-pointer"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Back</span>
@@ -251,11 +332,11 @@ export const Confirm: React.FC = () => {
 
           <button
             type="button"
-            disabled={loading}
+            disabled={loading || isSaving}
             onClick={handleConfirm}
-            className="px-8 py-3.5 rounded-full bg-[#F2B134] hover:bg-[#e0a32e] text-[#102A2E] text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all shadow-xs"
+            className="px-8 py-3.5 rounded-full bg-[#F2B134] hover:bg-[#e0a32e] text-[#102A2E] text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all shadow-xs disabled:opacity-50 cursor-pointer"
           >
-            <span>Confirm & find my people</span>
+            <span>{isSaving ? 'Saving...' : 'Confirm your move'}</span>
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>

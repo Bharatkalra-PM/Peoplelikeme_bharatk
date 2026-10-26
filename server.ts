@@ -29,7 +29,15 @@ if (process.env.GEMINI_API_KEY) {
   });
 }
 
-// 7.1 Voice audio transcription endpoint
+// Config endpoint (exposes DEMO_MODE safely, default false)
+app.get('/api/config', (_req: Request, res: Response) => {
+  res.json({
+    demoMode: process.env.DEMO_MODE === 'true' || process.env.VITE_DEMO_MODE === 'true',
+    aiConfigured: !!ai,
+  });
+});
+
+// 1. Voice audio transcription endpoint
 app.post('/api/gemini/transcribe', async (req: Request, res: Response) => {
   try {
     const { audioBase64, mimeType = 'audio/webm' } = req.body;
@@ -50,7 +58,9 @@ app.post('/api/gemini/transcribe', async (req: Request, res: Response) => {
         contents: {
           parts: [
             audioPart,
-            { text: 'Transcribe this voice answer accurately. Return only the plain transcript text with no extra commentary.' },
+            {
+              text: 'Transcribe this voice answer accurately. Return only the plain transcript text with no extra commentary.',
+            },
           ],
         },
       });
@@ -59,7 +69,6 @@ app.post('/api/gemini/transcribe', async (req: Request, res: Response) => {
       return res.json({ transcript });
     }
 
-    // Fallback if no API key
     return res.json({
       transcript: 'Voice input received (audio captured). Edit or refine this text as needed.',
     });
@@ -72,7 +81,7 @@ app.post('/api/gemini/transcribe', async (req: Request, res: Response) => {
   }
 });
 
-// 7.2 Draft move profile from story answers & CV/LinkedIn
+// 2. Draft move profile from story answers & CV/LinkedIn
 app.post('/api/gemini/draft-profile', async (req: Request, res: Response) => {
   try {
     const { storyAnswers, cvText, linkedInText, detailChips } = req.body;
@@ -90,10 +99,15 @@ CV/LinkedIn Text:
 ${cvText || linkedInText || 'None provided'}
 
 User Selected Details:
+- Current Role: ${detailChips?.from_role || ''}
+- Industry: ${detailChips?.from_field || ''}
+- Target Role: ${detailChips?.to_role || ''}
+- Years Experience: ${detailChips?.years_experience ?? ''}
 - Dependants: ${detailChips?.dependants || 'None'}
 - Priority: ${detailChips?.priority || 'Speed to role'}
 - Availability: ${(detailChips?.availability || []).join(', ')}
-- City: ${detailChips?.city || 'Remote'}
+- City: ${detailChips?.city || 'Bengaluru'}
+- Preferred Career Guide Gender: ${detailChips?.preferred_guide_gender || 'No preference'}
 `;
 
     if (ai) {
@@ -107,17 +121,17 @@ User Selected Details:
           responseSchema: {
             type: Type.OBJECT,
             properties: {
-              from_role: { type: Type.STRING, description: 'Role or job title the user is coming from' },
-              from_field: { type: Type.STRING, description: 'Field/industry coming from (e.g. Sales, Engineering, Marketing)' },
-              from_company_type: { type: Type.STRING, description: 'Type of company (e.g. Startup, Enterprise, Agency, Consulting)' },
-              to_role: { type: Type.STRING, description: 'Target role moving into (e.g. Product Manager, Product Designer)' },
-              years_experience: { type: Type.INTEGER, description: 'Total years of prior experience' },
-              months_since_leaving: { type: Type.INTEGER, description: 'Months since leaving last role, or null if currently employed' },
-              dependants: { type: Type.STRING, description: 'Dependants status (e.g. None, Children, Elderly parents, Partner)' },
-              priority: { type: Type.STRING, description: 'Primary priority (e.g. Speed to role, Target salary, Domain fit, Work-life balance)' },
-              availability: { type: Type.ARRAY, items: { type: Type.STRING }, description: 'Available times for sessions' },
-              constraints: { type: Type.ARRAY, items: { type: Type.STRING }, description: 'Key constraints or commitments' },
-              story: { type: Type.STRING, description: 'Short 2-3 sentence factual summary of this career move' },
+              from_role: { type: Type.STRING },
+              from_field: { type: Type.STRING },
+              from_company_type: { type: Type.STRING },
+              to_role: { type: Type.STRING },
+              years_experience: { type: Type.INTEGER },
+              months_since_leaving: { type: Type.INTEGER },
+              dependants: { type: Type.STRING },
+              priority: { type: Type.STRING },
+              availability: { type: Type.ARRAY, items: { type: Type.STRING } },
+              constraints: { type: Type.ARRAY, items: { type: Type.STRING } },
+              story: { type: Type.STRING },
             },
             required: ['from_role', 'to_role', 'years_experience'],
           },
@@ -130,41 +144,42 @@ User Selected Details:
       }
     }
 
-    // High quality non-AI fallback
     const fallbackProfile = {
-      from_role: storyAnswers?.coming_from || 'Current Role',
-      from_field: 'Technology & Business',
+      from_role: detailChips?.from_role || storyAnswers?.coming_from || 'B2B Sales Lead',
+      from_field: detailChips?.from_field || 'Sales & Operations',
       from_company_type: 'Growth-stage tech',
-      to_role: storyAnswers?.going_to || 'Product Manager',
-      years_experience: 4,
+      to_role: detailChips?.to_role || storyAnswers?.going_to || 'Product Manager',
+      years_experience: detailChips?.years_experience ?? 5,
       months_since_leaving: null,
       dependants: detailChips?.dependants || 'None',
       priority: detailChips?.priority || 'Speed to role',
-      availability: detailChips?.availability || ['Weekday evenings'],
+      availability: detailChips?.availability || ['Weekday evenings (6:00 PM – 8:00 PM)'],
       constraints: detailChips?.constraints || [],
-      story: storyAnswers?.pushing_change || 'Looking to transition skills into a new product-focused role.',
+      story:
+        storyAnswers?.pushing_change ||
+        'Looking to transition skills into a new product-focused role.',
     };
 
     return res.json(fallbackProfile);
   } catch (error: any) {
     console.warn('Draft profile failed, using fallback:', error.message);
     return res.json({
-      from_role: 'Sales Representative',
-      from_field: 'Sales',
+      from_role: req.body?.detailChips?.from_role || 'Sales Lead',
+      from_field: req.body?.detailChips?.from_field || 'Sales',
       from_company_type: 'Tech company',
-      to_role: 'Product Manager',
-      years_experience: 5,
+      to_role: req.body?.detailChips?.to_role || 'Product Manager',
+      years_experience: req.body?.detailChips?.years_experience ?? 5,
       months_since_leaving: null,
-      dependants: 'None',
-      priority: 'Speed to role',
-      availability: ['Weekday evenings'],
-      constraints: [],
-      story: 'Making a deliberate transition leveraging existing customer domain experience.',
+      dependants: req.body?.detailChips?.dependants || 'None',
+      priority: req.body?.detailChips?.priority || 'Speed to role',
+      availability: req.body?.detailChips?.availability || ['Weekday evenings (6:00 PM – 8:00 PM)'],
+      constraints: req.body?.detailChips?.constraints || [],
+      story: 'Making a deliberate transition leveraging existing domain experience.',
     });
   }
 });
 
-// 7.3 Write match reason (one sentence under 20 words, shared facts only)
+// 3. Write match reason (one sentence under 20 words, shared facts only)
 app.post('/api/gemini/match-reason', async (req: Request, res: Response) => {
   try {
     const { switcherProfile, guideProfile } = req.body;
@@ -180,7 +195,7 @@ Switcher:
 - Priority: ${switcherProfile.priority}
 - Dependants: ${switcherProfile.dependants}
 
-Guide:
+Career Guide:
 - From: ${guideProfile.from_role} (${guideProfile.from_field})
 - To: ${guideProfile.to_role}
 - Experience: ${guideProfile.years_experience} years
@@ -195,7 +210,6 @@ Guide:
       });
 
       let text = response.text?.trim() || '';
-      // Ensure strictly under 20 words
       const words = text.split(/\s+/);
       if (words.length > 19) {
         text = words.slice(0, 19).join(' ') + '.';
@@ -203,10 +217,9 @@ Guide:
       return res.json({ reason: text });
     }
 
-    // Deterministic fallback
     let fallback = `Both navigated moving from ${switcherProfile.from_role} to ${guideProfile.to_role} with similar experience.`;
     if (guideProfile.went_back) {
-      fallback = `Both moved from ${switcherProfile.from_role} into ${guideProfile.to_role}; guide later returned to ${guideProfile.from_role}.`;
+      fallback = `Both moved from ${switcherProfile.from_role} into ${guideProfile.to_role}; Career Guide later returned to ${guideProfile.from_role}.`;
     }
     return res.json({ reason: fallback });
   } catch (error: any) {
@@ -216,11 +229,158 @@ Guide:
   }
 });
 
+// 4. Draft 4 to 6 personal milestones across 8 weeks (skipping anything already done)
+app.post('/api/gemini/draft-milestones', async (req: Request, res: Response) => {
+  try {
+    const { moveProfile, triedSoFar = '' } = req.body;
+    const targetRole = moveProfile?.to_role || 'Product Manager';
+    const fromRole = moveProfile?.from_role || 'Sales';
+
+    if (ai) {
+      const response = await ai.models.generateContent({
+        model: 'gemini-3.8-flash',
+        contents: `
+User Profile:
+- Moving from: ${fromRole} (${moveProfile?.from_field || ''})
+- Moving to: ${targetRole}
+- Years of experience: ${moveProfile?.years_experience || 5}
+- Priority: ${moveProfile?.priority || 'Speed to role'}
+- Already tried / completed: ${triedSoFar} ${(moveProfile?.already_done || []).join(', ')}
+`,
+        config: {
+          systemInstruction:
+            'Draft 5 personal career transition milestones placed across an 8-week plan (weeks 1, 2, 4, 6, 8). Skip anything the user has already done (for example, if the CV is already rewritten, do not include rewriting the CV). Return JSON array of objects with week (1-8), title, and description.',
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                week: { type: Type.INTEGER },
+                title: { type: Type.STRING },
+                description: { type: Type.STRING },
+              },
+              required: ['week', 'title', 'description'],
+            },
+          },
+        },
+      });
+
+      if (response.text) {
+        const parsed = JSON.parse(response.text.trim());
+        if (Array.isArray(parsed) && parsed.length >= 4) {
+          return res.json({
+            milestones: parsed.slice(0, 6).map((m: any, idx: number) => ({
+              id: `ms-ai-${idx + 1}`,
+              week: Math.min(8, Math.max(1, m.week || idx + 1)),
+              title: m.title,
+              description: m.description,
+              completed: false,
+            })),
+          });
+        }
+      }
+    }
+
+    const combinedText = `${triedSoFar} ${(moveProfile?.already_done || []).join(' ')}`.toLowerCase();
+    const cvDone =
+      combinedText.includes('cv') ||
+      combinedText.includes('resume');
+
+    const fallbackMilestones = [
+      {
+        id: 'ms-1',
+        week: 1,
+        title: `Validate target ${targetRole} roles & map transferable strengths from ${fromRole}`,
+        description: 'Align with your Career Guide on target company stages and role expectations.',
+        completed: false,
+      },
+      cvDone
+        ? {
+            id: 'ms-2',
+            week: 2,
+            title: `Shortlist 15 high-fit companies hiring ${targetRole}s with domain overlap`,
+            description: 'Focus outreach on teams where your prior industry context is an unfair advantage.',
+            completed: false,
+          }
+        : {
+            id: 'ms-2',
+            week: 2,
+            title: `Reframe CV & LinkedIn narrative for ${targetRole} hiring managers`,
+            description: `Translate ${fromRole} achievements into ${targetRole} outcomes.`,
+            completed: false,
+          },
+      {
+        id: 'ms-3',
+        week: 4,
+        title: `Complete 2 practical ${targetRole} case studies / tear-downs`,
+        description: 'Build tangible proof-of-work artifacts to share in warm outreach and interviews.',
+        completed: false,
+      },
+      {
+        id: 'ms-4',
+        week: 6,
+        title: 'Run 6 warm informational conversations & referral requests',
+        description: 'Speak with hiring peers and alumni who transitioned from similar backgrounds.',
+        completed: false,
+      },
+      {
+        id: 'ms-5',
+        week: 8,
+        title: `Mock interviews & live ${targetRole} case drills with Career Guide`,
+        description: 'Practice behavioural storytelling and structured problem solving.',
+        completed: false,
+      },
+    ];
+
+    return res.json({ milestones: fallbackMilestones });
+  } catch (error: any) {
+    return res.json({ milestones: [] });
+  }
+});
+
+// 5. Verify Career Guide CV ("Move found": >= 2 years in earlier role, >= 1 year in current role)
+app.post('/api/gemini/verify-guide-cv', async (req: Request, res: Response) => {
+  try {
+    const {
+      cvText = '',
+      fromRole = '',
+      toRole = '',
+      yearsInEarlierRole = 0,
+      yearsInCurrentRole = 0,
+    } = req.body;
+
+    const mismatchFlags: string[] = [];
+    if (yearsInEarlierRole < 2) {
+      mismatchFlags.push(`Earlier role duration (${yearsInEarlierRole}y) is under the 2-year minimum.`);
+    }
+    if (yearsInCurrentRole < 1) {
+      mismatchFlags.push(`Current role duration (${yearsInCurrentRole}y) is under the 1-year minimum.`);
+    }
+    if (cvText && fromRole && !cvText.toLowerCase().includes(fromRole.toLowerCase().split(' ')[0])) {
+      mismatchFlags.push(`CV text does not clearly mention earlier role "${fromRole}".`);
+    }
+
+    const moveFound = yearsInEarlierRole >= 2 && yearsInCurrentRole >= 1 && mismatchFlags.length === 0;
+
+    return res.json({
+      move_found: moveFound,
+      mismatch_flags: mismatchFlags,
+    });
+  } catch (error: any) {
+    return res.json({
+      move_found: true,
+      mismatch_flags: [],
+    });
+  }
+});
+
 // Health check endpoint
 app.get('/api/health', (_req: Request, res: Response) => {
   res.json({
     status: 'ok',
     aiConfigured: !!ai,
+    demoMode: process.env.DEMO_MODE === 'true',
     timestamp: new Date().toISOString(),
   });
 });
@@ -252,7 +412,11 @@ async function startServer() {
   }
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`People Like Me server running at http://0.0.0.0:${PORT} (mode: ${isProduction ? 'production' : 'development'})`);
+    console.log(
+      `People Like Me server running at http://0.0.0.0:${PORT} (mode: ${
+        isProduction ? 'production' : 'development'
+      })`
+    );
   });
 }
 

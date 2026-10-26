@@ -1,9 +1,14 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import {
+  CareerGuideApplication,
+  ConversationRating,
+  GenderOption,
   Goal,
   GuideCandidate,
   GuideRequest,
+  Milestone,
   MoveProfile,
+  ObjectiveType,
   Pod,
   PodMember,
   PodPost,
@@ -12,33 +17,101 @@ import {
   Report,
   Rhythm,
   Session,
+  SprintPlan,
   StoryAnswer,
 } from '../types';
-import { DEFAULT_DEMO_SWITCHER, SEED_GUIDES, SEED_POD_MEMBERS, SEED_POD_POSTS, SEED_PODS, SeedGuide } from '../data/seedData';
-import { calculateMatchScore, formatMoveLine, rankGuides } from '../lib/matching';
+import {
+  DEFAULT_DEMO_SWITCHER,
+  DEMO_SAMPLE_GUIDES,
+  DEMO_SAMPLE_PODS,
+  SEED_GUIDE_APPLICATIONS,
+  SEED_GUIDES,
+  SEED_POD_MEMBERS,
+  SEED_POD_POSTS,
+  SEED_PODS,
+  SeedGuide,
+} from '../data/seedData';
+import {
+  calculateCurrentWeek,
+  draftPersonalMilestones,
+  formatMoveLine,
+  rankGuides,
+} from '../lib/matching';
 import { generateJitsiUrl } from '../lib/calendar';
+
+export interface DetailChipsState {
+  from_role: string;
+  from_field: string;
+  to_role: string;
+  years_experience: number;
+  dependants: string;
+  priority: string;
+  availability: string[];
+  city: string;
+  constraints: string[];
+  preferred_guide_gender: GenderOption;
+}
 
 interface AppContextType {
   currentUser: Profile | null;
   currentMoveProfile: MoveProfile | null;
   theme: 'light' | 'dark';
   toggleTheme: () => void;
+  demoMode: boolean;
+  setDemoMode: (enabled: boolean) => void;
   // Auth & Role Switching
-  login: (email: string, role: 'switcher' | 'guide' | 'admin', name?: string) => void;
+  login: (
+    email: string,
+    role: 'switcher' | 'guide' | 'admin',
+    name?: string,
+    isNewUser?: boolean
+  ) => { isReturning: boolean; targetRoute: string };
   logout: () => void;
-  switchUser: (type: 'switcher_priya' | 'new_switcher' | 'guide_arjun' | 'guide_dev' | 'guide_vikram' | 'admin') => void;
+  switchUser: (
+    type:
+      | 'switcher_priya'
+      | 'new_switcher'
+      | 'guide_arjun'
+      | 'guide_dev'
+      | 'guide_vikram'
+      | 'admin'
+  ) => void;
+  setUserObjective: (objective: ObjectiveType) => void;
   // Onboarding
   storyAnswers: Record<string, StoryAnswer>;
   saveStoryAnswer: (promptKey: string, answer: string, mode: 'text' | 'voice') => void;
-  backgroundInfo: { cvText: string; linkedInText: string; cvFileName: string };
-  setBackgroundInfo: (info: { cvText: string; linkedInText: string; cvFileName: string }) => void;
-  detailChips: { dependants: string; priority: string; availability: string[]; city: string; constraints: string[] };
-  setDetailChips: React.Dispatch<React.SetStateAction<{ dependants: string; priority: string; availability: string[]; city: string; constraints: string[] }>>;
+  backgroundInfo: {
+    cvText: string;
+    linkedInText: string;
+    cvFileName: string;
+    manualRole?: string;
+    manualIndustry?: string;
+    manualYears?: string;
+    manualSummary?: string;
+  };
+  setBackgroundInfo: (info: {
+    cvText: string;
+    linkedInText: string;
+    cvFileName: string;
+    manualRole?: string;
+    manualIndustry?: string;
+    manualYears?: string;
+    manualSummary?: string;
+  }) => void;
+  detailChips: DetailChipsState;
+  setDetailChips: React.Dispatch<React.SetStateAction<DetailChipsState>>;
   draftedProfile: MoveProfile | null;
   setDraftedProfile: (profile: MoveProfile | null) => void;
   confirmMoveProfile: (profile: MoveProfile) => void;
+  updateMatchingParameters: (
+    updates: Partial<MoveProfile> & { city?: string }
+  ) => void;
   // Matching & Requests
-  guideCandidates: { matches: GuideCandidate[]; isNoMatch: boolean; closestGuides: GuideCandidate[] };
+  guideCandidates: {
+    matches: GuideCandidate[];
+    isNoMatch: boolean;
+    closestGuides: GuideCandidate[];
+  };
   activeRequest: GuideRequest | null;
   rematchOffered: boolean;
   rematchReasonNote: string;
@@ -46,16 +119,40 @@ interface AppContextType {
   acceptGuideRequest: (requestId: string) => void;
   declineGuideRequest: (requestId: string) => void;
   simulate48HourExpiry: () => void;
-  // Pod & Rhythm
+  // Pod & Rhythm & Sprint Plan
   currentRhythm: Rhythm | null;
   currentPod: Pod | null;
   podMembers: PodMember[];
+  podReadyNotification: string | null;
+  dismissPodNotification: () => void;
+  simulatePodReady: () => void;
   sessions: Session[];
-  updateRhythmSchedule: (guideSlot: string, podCallSlot: string, podCheckinSlot: string) => void;
+  updateRhythmSchedule: (
+    guideSlot: string,
+    podCallSlot: string,
+    podCheckinSlot: string
+  ) => void;
+  sprintPlan: SprintPlan | null;
+  addMilestone: (week: number, title: string, description?: string) => void;
+  updateMilestone: (id: string, updates: Partial<Milestone>) => void;
+  removeMilestone: (id: string) => void;
+  reorderMilestone: (id: string, direction: 'up' | 'down') => void;
+  finalisePlan: () => void;
+  suggestWeeklyGoal: (goalText: string, week?: number) => void;
+  acceptSuggestedGoal: (goalText: string) => void;
+  dismissSuggestedGoal: (goalText: string) => void;
+  // Post-Conversation Rating
+  conversationRatings: ConversationRating[];
+  rateConversation: (
+    sessionId: string,
+    helpfulScore: number,
+    moveMatchScore: number
+  ) => void;
   // Goals
   goals: Goal[];
   updateGoalStatus: (goalId: string, status: 'not_yet' | 'partly' | 'done') => void;
   saveWeeklyGoals: (texts: string[]) => void;
+  replaceGoal: (goalId: string, newText: string) => void;
   // Pod Posts
   podPosts: PodPost[];
   addPodPost: (body: string, isWin: boolean) => void;
@@ -70,13 +167,28 @@ interface AppContextType {
   updateContactSettings: (shareGuide: boolean, sharePod: boolean) => void;
   reportModalUser: { id: string; name: string } | null;
   setReportModalUser: (user: { id: string; name: string } | null) => void;
-  submitReport: (reportedUserId: string, reportedName: string, reason: string, details: string) => void;
+  submitReport: (
+    reportedUserId: string,
+    reportedName: string,
+    reason: string,
+    details: string
+  ) => void;
   deleteAccount: () => void;
   exportDataJson: () => string;
-  // Admin & Guide Management
+  // Admin & Career Guide Applications
   guidesList: SeedGuide[];
   pendingGuideApprovals: Profile[];
   approveGuide: (guideId: string) => void;
+  guideApplications: CareerGuideApplication[];
+  submitGuideApplication: (
+    appData: Omit<
+      CareerGuideApplication,
+      'id' | 'created_at' | 'status' | 'checks'
+    >
+  ) => CareerGuideApplication;
+  approveGuideApplication: (appId: string) => void;
+  rejectGuideApplication: (appId: string, note?: string) => void;
+  askMoreGuideApplication: (appId: string, note?: string) => void;
   reportsList: Report[];
   resolveReport: (reportId: string, action: 'dismiss' | 'pause_user') => void;
   // Landed & Wrap-up
@@ -88,7 +200,18 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'plm_app_state_v1';
+const STORAGE_KEY = 'plm_app_state_v2';
+
+function loadSavedState<T>(key: string, fallback: T): T {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return fallback;
+    const parsed = JSON.parse(raw);
+    return parsed[key] !== undefined ? parsed[key] : fallback;
+  } catch {
+    return fallback;
+  }
+}
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Theme state
@@ -109,98 +232,289 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
   };
 
-  // User & Profiles
-  const [currentUser, setCurrentUser] = useState<Profile | null>(() => DEFAULT_DEMO_SWITCHER.profile);
-  const [currentMoveProfile, setCurrentMoveProfile] = useState<MoveProfile | null>(() => DEFAULT_DEMO_SWITCHER.move_profile);
+  // DEMO_MODE (default false unless VITE_DEMO_MODE === 'true')
+  const [demoMode, setDemoModeState] = useState<boolean>(() =>
+    loadSavedState('demoMode', import.meta.env.VITE_DEMO_MODE === 'true')
+  );
 
-  // Onboarding state
-  const [storyAnswers, setStoryAnswers] = useState<Record<string, StoryAnswer>>({});
-  const [backgroundInfo, setBackgroundInfo] = useState({
-    cvText: '',
-    linkedInText: '',
-    cvFileName: '',
-  });
-  const [detailChips, setDetailChips] = useState({
-    dependants: 'None',
-    priority: 'Speed to role',
-    availability: ['Weekday evenings', 'Weekend mornings'],
-    city: 'Bengaluru',
-    constraints: ['Self-taught tech knowledge'],
-  });
-  const [draftedProfile, setDraftedProfile] = useState<MoveProfile | null>(null);
+  // User & Profiles
+  const [currentUser, setCurrentUser] = useState<Profile | null>(() =>
+    loadSavedState('currentUser', DEFAULT_DEMO_SWITCHER.profile)
+  );
+  const [currentMoveProfile, setCurrentMoveProfile] = useState<MoveProfile | null>(() =>
+    loadSavedState('currentMoveProfile', DEFAULT_DEMO_SWITCHER.move_profile)
+  );
+
+  // Onboarding state (persisted across refreshes)
+  const [storyAnswers, setStoryAnswers] = useState<Record<string, StoryAnswer>>(() =>
+    loadSavedState('storyAnswers', {})
+  );
+  const [backgroundInfo, setBackgroundInfo] = useState(() =>
+    loadSavedState('backgroundInfo', {
+      cvText: '',
+      linkedInText: '',
+      cvFileName: '',
+      manualRole: '',
+      manualIndustry: '',
+      manualYears: '',
+      manualSummary: '',
+    })
+  );
+  const [detailChips, setDetailChips] = useState<DetailChipsState>(() =>
+    loadSavedState('detailChips', {
+      from_role: 'B2B Sales Lead',
+      from_field: 'Sales',
+      to_role: 'Product Manager',
+      years_experience: 5,
+      dependants: 'None',
+      priority: 'Speed to role',
+      availability: [
+        'Weekday evenings (6:00 PM – 8:00 PM)',
+        'Weekend mornings (9:00 AM – 12:00 PM)',
+      ],
+      city: 'Bengaluru',
+      constraints: ['Self-taught tech knowledge'],
+      preferred_guide_gender: 'No preference',
+    })
+  );
+  const [draftedProfile, setDraftedProfile] = useState<MoveProfile | null>(() =>
+    loadSavedState('draftedProfile', null)
+  );
 
   // Database collections
-  const [guidesList, setGuidesList] = useState<SeedGuide[]>(() => SEED_GUIDES);
-  const [podsList, setPodsList] = useState<Pod[]>(() => SEED_PODS);
-  const [podMembersMap, setPodMembersMap] = useState<Record<string, PodMember[]>>(() => SEED_POD_MEMBERS);
-  const [podPosts, setPodPosts] = useState<PodPost[]>(() => SEED_POD_POSTS);
-  const [goals, setGoals] = useState<Goal[]>(() => DEFAULT_DEMO_SWITCHER.goals);
-  const [guideRequests, setGuideRequests] = useState<GuideRequest[]>([]);
-  const [rematchOffered, setRematchOffered] = useState(false);
-  const [rematchReasonNote, setRematchReasonNote] = useState('');
-  const [reachOutPrompts, setReachOutPrompts] = useState<ReachOutPrompt[]>([]);
-  const [reportsList, setReportsList] = useState<Report[]>([]);
-  const [reportModalUser, setReportModalUser] = useState<{ id: string; name: string } | null>(null);
+  const [guidesList, setGuidesList] = useState<SeedGuide[]>(() =>
+    loadSavedState('guidesList', SEED_GUIDES)
+  );
+  const [podsList, setPodsList] = useState<Pod[]>(() =>
+    loadSavedState('podsList', SEED_PODS)
+  );
+  const [podMembersMap, setPodMembersMap] = useState<Record<string, PodMember[]>>(() =>
+    loadSavedState('podMembersMap', SEED_POD_MEMBERS)
+  );
+  const [podPosts, setPodPosts] = useState<PodPost[]>(() =>
+    loadSavedState('podPosts', SEED_POD_POSTS)
+  );
+  const [goals, setGoals] = useState<Goal[]>(() =>
+    loadSavedState('goals', DEFAULT_DEMO_SWITCHER.goals)
+  );
+  const [guideRequests, setGuideRequests] = useState<GuideRequest[]>(() =>
+    loadSavedState('guideRequests', [])
+  );
+  const [declinedGuideIds, setDeclinedGuideIds] = useState<string[]>(() =>
+    loadSavedState('declinedGuideIds', [])
+  );
+  const [rematchOffered, setRematchOffered] = useState<boolean>(() =>
+    loadSavedState('rematchOffered', false)
+  );
+  const [rematchReasonNote, setRematchReasonNote] = useState<string>(() =>
+    loadSavedState('rematchReasonNote', '')
+  );
+  const [reachOutPrompts, setReachOutPrompts] = useState<ReachOutPrompt[]>(() =>
+    loadSavedState('reachOutPrompts', [])
+  );
+  const [reportsList, setReportsList] = useState<Report[]>(() =>
+    loadSavedState('reportsList', [])
+  );
+  const [reportModalUser, setReportModalUser] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+  const [podReadyNotification, setPodReadyNotification] = useState<string | null>(null);
 
-  // Active Rhythm & Sessions
-  const [currentRhythm, setCurrentRhythm] = useState<Rhythm | null>(() => ({
-    id: 'rhythm-bharat-1',
-    switcher_id: 'user-bharat-k',
-    guide_id: 'guide-arjun-k',
-    pod_id: 'pod-pm-forming',
-    start_date: new Date().toISOString().split('T')[0],
-    week: 1,
-    status: 'active',
-    guide_slot: 'Wednesdays 6:30 PM (6:00 PM – 8:00 PM)',
-  }));
+  // Career Guide Applications & Ratings
+  const [guideApplications, setGuideApplications] = useState<CareerGuideApplication[]>(
+    () => loadSavedState('guideApplications', SEED_GUIDE_APPLICATIONS)
+  );
+  const [conversationRatings, setConversationRatings] = useState<ConversationRating[]>(
+    () => loadSavedState('conversationRatings', [])
+  );
 
-  const [sessions, setSessions] = useState<Session[]>(() => [
-    {
-      id: 'session-g-1',
-      rhythm_id: 'rhythm-bharat-1',
-      pod_id: null,
-      kind: 'guide',
-      // Starts in 45 minutes for realistic demo
-      starts_at: new Date(Date.now() + 45 * 60 * 1000).toISOString(),
-      duration_min: 30,
-      video_url: generateJitsiUrl('guide', 'g-1'),
-      agenda: 'Introductions, validating 3 target roles, setting rhythm',
-      held: null,
-      title: 'Guide conversation with Arjun K.',
-      with_name: 'Arjun K.',
-    },
-    {
-      id: 'session-p-1',
-      rhythm_id: 'rhythm-bharat-1',
+  // Active Rhythm & Sprint Plan
+  const [currentRhythm, setCurrentRhythm] = useState<Rhythm | null>(() =>
+    loadSavedState('currentRhythm', {
+      id: 'rhythm-bharat-1',
+      switcher_id: 'user-bharat-k',
+      guide_id: 'guide-arjun-k',
       pod_id: 'pod-pm-forming',
-      kind: 'pod_call',
-      starts_at: new Date(Date.now() + 26 * 60 * 60 * 1000).toISOString(),
-      duration_min: 30,
-      video_url: generateJitsiUrl('pod', 'p-1'),
-      agenda: 'Pod call: Target company profiles and resume tear-downs',
-      held: null,
-      title: 'Pod call',
-    },
-    {
-      id: 'session-p-2',
-      rhythm_id: 'rhythm-priya-1',
-      pod_id: 'pod-pm-forming',
-      kind: 'pod_checkin',
-      starts_at: new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString(),
-      duration_min: 15,
-      video_url: generateJitsiUrl('pod', 'p-2'),
-      agenda: '15-minute pod check-in',
-      held: null,
-      title: 'Pod check-in',
-    },
+      start_date: new Date().toISOString().split('T')[0],
+      week: 1,
+      status: 'active',
+      guide_slot: 'Wednesdays 6:30 PM (6:00 PM – 8:00 PM)',
+    })
+  );
+
+  const [sprintPlan, setSprintPlan] = useState<SprintPlan | null>(() =>
+    loadSavedState('sprintPlan', {
+      id: 'plan-default-1',
+      switcher_id: 'user-bharat-k',
+      guide_id: 'guide-arjun-k',
+      status: 'draft',
+      milestones: draftPersonalMilestones(DEFAULT_DEMO_SWITCHER.move_profile),
+      suggested_goals: {
+        1: [
+          'Confirm the first Career Guide conversation',
+          'Set this week’s goals',
+          'Introduce yourself to your pod',
+        ],
+      },
+      updated_at: new Date().toISOString(),
+    })
+  );
+
+  const [sessions, setSessions] = useState<Session[]>(() =>
+    loadSavedState('sessions', [
+      {
+        id: 'session-g-1',
+        rhythm_id: 'rhythm-bharat-1',
+        pod_id: null,
+        kind: 'guide',
+        // Starts within 5 minutes so Join button is active by default for immediate testing
+        starts_at: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+        duration_min: 30,
+        video_url: generateJitsiUrl('guide', 'g-1'),
+        agenda: 'Introductions, validating target roles, finalising your 8-week plan',
+        held: null,
+        title: 'Career Guide conversation with Arjun K.',
+        with_name: 'Arjun K.',
+      },
+      {
+        id: 'session-p-1',
+        rhythm_id: 'rhythm-bharat-1',
+        pod_id: 'pod-pm-forming',
+        kind: 'pod_call',
+        starts_at: new Date(Date.now() + 26 * 60 * 60 * 1000).toISOString(),
+        duration_min: 30,
+        video_url: generateJitsiUrl('pod', 'p-1'),
+        agenda: 'Pod call: Target company profiles and resume tear-downs',
+        held: null,
+        title: 'Pod call',
+      },
+      {
+        id: 'session-p-2',
+        rhythm_id: 'rhythm-bharat-1',
+        pod_id: 'pod-pm-forming',
+        kind: 'pod_checkin',
+        starts_at: new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString(),
+        duration_min: 15,
+        video_url: generateJitsiUrl('pod', 'p-2'),
+        agenda: '15-minute pod check-in',
+        held: null,
+        title: 'Pod check-in',
+      },
+    ])
+  );
+
+  // Persist state to localStorage on every update so refresh never loses state
+  useEffect(() => {
+    try {
+      const stateToSave = {
+        demoMode,
+        currentUser,
+        currentMoveProfile,
+        storyAnswers,
+        backgroundInfo,
+        detailChips,
+        draftedProfile,
+        guidesList,
+        podsList,
+        podMembersMap,
+        podPosts,
+        goals,
+        guideRequests,
+        declinedGuideIds,
+        rematchOffered,
+        rematchReasonNote,
+        reachOutPrompts,
+        reportsList,
+        guideApplications,
+        conversationRatings,
+        currentRhythm,
+        sprintPlan,
+        sessions,
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToSave));
+    } catch (e) {
+      console.warn('Could not persist state:', e);
+    }
+  }, [
+    demoMode,
+    currentUser,
+    currentMoveProfile,
+    storyAnswers,
+    backgroundInfo,
+    detailChips,
+    draftedProfile,
+    guidesList,
+    podsList,
+    podMembersMap,
+    podPosts,
+    goals,
+    guideRequests,
+    declinedGuideIds,
+    rematchOffered,
+    rematchReasonNote,
+    reachOutPrompts,
+    reportsList,
+    guideApplications,
+    conversationRatings,
+    currentRhythm,
+    sprintPlan,
+    sessions,
   ]);
 
-  // Save story answer
-  const saveStoryAnswer = (promptKey: string, answer: string, mode: 'text' | 'voice') => {
+  // Automatic week rollover check from start_date
+  useEffect(() => {
+    if (currentRhythm && currentRhythm.start_date) {
+      const computedWeek = calculateCurrentWeek(currentRhythm.start_date);
+      if (computedWeek > currentRhythm.week) {
+        setCurrentRhythm((prev) => (prev ? { ...prev, week: computedWeek } : prev));
+      }
+    }
+  }, [currentRhythm?.start_date]);
+
+  // Automatic 48-hour expiry check on pending requests
+  useEffect(() => {
+    const pendingReq = guideRequests.find(
+      (r) => r.switcher_id === currentUser?.id && r.status === 'pending'
+    );
+    if (pendingReq) {
+      const respondByMs = new Date(pendingReq.respond_by).getTime();
+      if (Date.now() > respondByMs) {
+        simulate48HourExpiry();
+      }
+    }
+  }, [guideRequests, currentUser?.id]);
+
+  const setDemoMode = (enabled: boolean) => {
+    setDemoModeState(enabled);
+  };
+
+  // Pool of guides active based on DEMO_MODE (never mix sample people with real ones)
+  const activeGuidesPool = React.useMemo(() => {
+    if (demoMode) {
+      return DEMO_SAMPLE_GUIDES;
+    }
+    return guidesList.filter((g) => !g.profile.is_sample);
+  }, [demoMode, guidesList]);
+
+  const setUserObjective = (objective: ObjectiveType) => {
     if (!currentUser) return;
+    setCurrentUser({
+      ...currentUser,
+      objective,
+      role: objective === 'become_guide' ? 'guide' : 'switcher',
+    });
+  };
+
+  // Save story answer
+  const saveStoryAnswer = (
+    promptKey: string,
+    answer: string,
+    mode: 'text' | 'voice'
+  ) => {
     const item: StoryAnswer = {
       id: `ans-${Date.now()}-${promptKey}`,
-      user_id: currentUser.id,
+      user_id: currentUser?.id || 'anon',
       prompt_key: promptKey as any,
       answer,
       input_mode: mode,
@@ -209,28 +523,97 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setStoryAnswers((prev) => ({ ...prev, [promptKey]: item }));
   };
 
-  // Confirm move profile
+  // Confirm move profile (Step 3.4 -> Step 4 Dashboard before matching)
   const confirmMoveProfile = (profile: MoveProfile) => {
-    const confirmed = { ...profile, confirmed_at: new Date().toISOString() };
+    const confirmed: MoveProfile = {
+      ...profile,
+      preferred_guide_gender:
+        profile.preferred_guide_gender || detailChips.preferred_guide_gender || 'No preference',
+      confirmed_at: new Date().toISOString(),
+    };
     setCurrentMoveProfile(confirmed);
     setDraftedProfile(confirmed);
+    if (currentUser) {
+      setCurrentUser({
+        ...currentUser,
+        city: detailChips.city || currentUser.city,
+        onboarding_completed: true,
+      });
+    }
   };
 
-  // Calculate guide candidates using Section 6.1 formula
+  // Adjust what matters (Step 5: live parameter adjustment on Recommended Career Guides)
+  const updateMatchingParameters = (
+    updates: Partial<MoveProfile> & { city?: string }
+  ) => {
+    const base = currentMoveProfile ||
+      draftedProfile || {
+        user_id: currentUser?.id || 'switcher-varun',
+        from_role: detailChips.from_role || 'Sales',
+        from_field: detailChips.from_field || 'Sales',
+        from_company_type: 'Tech company',
+        to_role: detailChips.to_role || 'Product Manager',
+        years_experience: detailChips.years_experience || 5,
+        months_since_leaving: null,
+        dependants: detailChips.dependants || 'None',
+        priority: detailChips.priority || 'Speed to role',
+        availability: detailChips.availability || ['Weekday evenings (6:00 PM – 8:00 PM)'],
+        constraints: detailChips.constraints || [],
+        went_back: false,
+        years_since_move: null,
+        story: '',
+        confirmed_at: new Date().toISOString(),
+        preferred_guide_gender: detailChips.preferred_guide_gender || 'No preference',
+      };
+
+    const updatedProfile: MoveProfile = {
+      ...base,
+      ...updates,
+    };
+    setCurrentMoveProfile(updatedProfile);
+    setDraftedProfile(updatedProfile);
+
+    if (updates.city && currentUser) {
+      setCurrentUser({ ...currentUser, city: updates.city });
+      setDetailChips((prev) => ({ ...prev, city: updates.city! }));
+    }
+  };
+
+  // Calculate Career Guide candidates (3 to 5 matches, at most one "New" guide)
   const guideCandidates = React.useMemo(() => {
     const profileToMatch = currentMoveProfile || draftedProfile;
     if (!profileToMatch) {
       return { matches: [], isNoMatch: false, closestGuides: [] };
     }
-    return rankGuides(profileToMatch, currentUser?.city || 'Bengaluru', guidesList);
-  }, [currentMoveProfile, draftedProfile, currentUser, guidesList]);
+    return rankGuides(
+      profileToMatch,
+      currentUser?.city || detailChips.city || 'Bengaluru',
+      activeGuidesPool,
+      {
+        demoMode,
+        excludeGuideIds: declinedGuideIds,
+        maxResults: 5,
+      }
+    );
+  }, [
+    currentMoveProfile,
+    draftedProfile,
+    currentUser?.city,
+    detailChips.city,
+    activeGuidesPool,
+    demoMode,
+    declinedGuideIds,
+  ]);
 
-  // Active guide request
-  const activeRequest = guideRequests.find(
-    (r) => r.switcher_id === currentUser?.id && (r.status === 'pending' || r.status === 'accepted')
-  ) || null;
+  // Active Career Guide request
+  const activeRequest =
+    guideRequests.find(
+      (r) =>
+        r.switcher_id === currentUser?.id &&
+        (r.status === 'pending' || r.status === 'accepted')
+    ) || null;
 
-  // Send guide request (with 48-hour respond_by)
+  // Send Career Guide request (with 48-hour respond_by and parallel pod placement)
   const sendGuideRequest = (guideId: string, note: string, matchReason: string) => {
     if (!currentUser) return;
     const now = new Date();
@@ -248,32 +631,36 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     setGuideRequests((prev) => [newRequest, ...prev]);
+    setRematchOffered(false);
   };
 
-  // Guide accepts request
+  // Career Guide accepts request -> Starts Week 1 of 8, drafts 4-6 personal milestones & Week 1 goals
   const acceptGuideRequest = (requestId: string) => {
     setGuideRequests((prev) =>
       prev.map((r) => (r.id === requestId ? { ...r, status: 'accepted' as const } : r))
     );
 
-    const req = guideRequests.find((r) => r.id === requestId);
-    if (!req) return;
+    const req = guideRequests.find((r) => r.id === requestId) || activeRequest;
+    const guideId = req?.guide_id || 'guide-arjun-k';
+    const switcherId = req?.switcher_id || currentUser?.id || 'user-varun';
 
-    // Increment guide's active switchers count
     setGuidesList((prev) =>
       prev.map((g) =>
-        g.profile.id === req.guide_id
+        g.profile.id === guideId
           ? { ...g, active_switchers_count: g.active_switchers_count + 1 }
           : g
       )
     );
 
-    // Create or update rhythm
-    const matchedGuide = guidesList.find((g) => g.profile.id === req.guide_id);
+    const matchedGuide =
+      activeGuidesPool.find((g) => g.profile.id === guideId) || activeGuidesPool[0];
+    const guideFirstName = matchedGuide?.profile.first_name || 'Arjun';
+    const guideInitial = matchedGuide?.profile.last_initial || 'K.';
+
     const newRhythm: Rhythm = {
       id: `rhythm-${Date.now()}`,
-      switcher_id: req.switcher_id,
-      guide_id: req.guide_id,
+      switcher_id: switcherId,
+      guide_id: guideId,
       pod_id: 'pod-pm-forming',
       start_date: new Date().toISOString().split('T')[0],
       week: 1,
@@ -282,74 +669,364 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
     setCurrentRhythm(newRhythm);
 
-    // Create initial weekly session with guide
+    // Draft 4 to 6 personal milestones skipping anything already done
+    const moveProf =
+      currentMoveProfile || draftedProfile || DEFAULT_DEMO_SWITCHER.move_profile;
+    const triedText = storyAnswers?.tried_so_far?.answer || backgroundInfo.cvText || '';
+    const milestones = draftPersonalMilestones(moveProf, { triedSoFar: triedText });
+
+    // Week 1 always includes: confirm the first Career Guide conversation, set this week's goals, and introduce yourself to your pod
+    const week1Goals = [
+      'Confirm the first Career Guide conversation',
+      'Set this week’s goals',
+      'Introduce yourself to your pod',
+    ];
+
+    const newPlan: SprintPlan = {
+      id: `plan-${Date.now()}`,
+      switcher_id: switcherId,
+      guide_id: guideId,
+      status: 'draft',
+      milestones,
+      suggested_goals: {
+        1: week1Goals,
+        2: [
+          `Audit top 10 target ${moveProf.to_role} job descriptions`,
+          'Identify 3 transferable metric stories from your current role',
+        ],
+      },
+      updated_at: new Date().toISOString(),
+    };
+    setSprintPlan(newPlan);
+
+    // Populate Week 1 goals
+    const today = new Date().toISOString().split('T')[0];
+    setGoals(
+      week1Goals.map((text, idx) => ({
+        id: `goal-w1-${idx + 1}`,
+        user_id: switcherId,
+        week_start: today,
+        week_number: 1,
+        text,
+        status: 'not_yet',
+        suggested_by_guide: true,
+        updated_at: new Date().toISOString(),
+      }))
+    );
+
     const guideSession: Session = {
       id: `sess-guide-${Date.now()}`,
       rhythm_id: newRhythm.id,
       pod_id: null,
       kind: 'guide',
-      starts_at: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
+      starts_at: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
       duration_min: 30,
       video_url: generateJitsiUrl('guide', Date.now().toString()),
-      agenda: 'Kickoff: Understand move timeline and first week priorities',
+      agenda: `Kickoff: Finalise your 8-week plan with ${guideFirstName} and set Week 1 priorities`,
       held: null,
-      title: `Guide conversation with ${matchedGuide?.profile.first_name || 'Guide'} ${matchedGuide?.profile.last_initial || ''}`,
-      with_name: `${matchedGuide?.profile.first_name || 'Guide'} ${matchedGuide?.profile.last_initial || ''}`,
+      title: `Career Guide conversation with ${guideFirstName} ${guideInitial}`,
+      with_name: `${guideFirstName} ${guideInitial}`,
     };
-    setSessions((prev) => [guideSession, ...prev]);
+    setSessions((prev) => [guideSession, ...prev.filter((s) => s.kind !== 'guide')]);
   };
 
-  // Guide declines request
+  // Career Guide declines request -> automatically offer next best match
   const declineGuideRequest = (requestId: string) => {
+    const req = guideRequests.find((r) => r.id === requestId) || activeRequest;
+    const declinedGuideId = req?.guide_id;
     setGuideRequests((prev) =>
       prev.map((r) => (r.id === requestId ? { ...r, status: 'declined' as const } : r))
     );
-    const req = guideRequests.find((r) => r.id === requestId);
-    const guide = guidesList.find((g) => g.profile.id === req?.guide_id);
+    if (declinedGuideId) {
+      setDeclinedGuideIds((prev) =>
+        prev.includes(declinedGuideId) ? prev : [...prev, declinedGuideId]
+      );
+    }
+    const guide = activeGuidesPool.find((g) => g.profile.id === declinedGuideId);
     setRematchOffered(true);
-    setRematchReasonNote(`${guide?.profile.first_name || 'The guide'} couldn't take this on right now. Here's your next best match.`);
+    setRematchReasonNote(
+      `${
+        guide?.profile.first_name || 'Arjun'
+      } couldn't take this on right now. We've offered your next best Career Guide match automatically.`
+    );
   };
 
-  // 48-Hour Expiry Simulation
+  // 48-Hour Expiry -> automatically offer next best match
   const simulate48HourExpiry = () => {
     if (activeRequest) {
+      const expiredGuideId = activeRequest.guide_id;
       setGuideRequests((prev) =>
-        prev.map((r) => (r.id === activeRequest.id ? { ...r, status: 'expired' as const } : r))
+        prev.map((r) =>
+          r.id === activeRequest.id ? { ...r, status: 'expired' as const } : r
+        )
       );
-      const guide = guidesList.find((g) => g.profile.id === activeRequest.guide_id);
+      setDeclinedGuideIds((prev) =>
+        prev.includes(expiredGuideId) ? prev : [...prev, expiredGuideId]
+      );
+      const guide = activeGuidesPool.find((g) => g.profile.id === expiredGuideId);
       setRematchOffered(true);
-      setRematchReasonNote(`${guide?.profile.first_name || 'Arjun'} couldn't take this on right now. Here's your next best match.`);
+      setRematchReasonNote(
+        `${
+          guide?.profile.first_name || 'Arjun'
+        } couldn't reply within 48 hours. Here is your next best Career Guide match automatically.`
+      );
     }
   };
 
   // Pod & Rhythm
+  const activePodsPool = demoMode ? DEMO_SAMPLE_PODS : podsList;
   const currentPod = React.useMemo(() => {
-    if (!currentRhythm?.pod_id) return podsList[0];
-    return podsList.find((p) => p.id === currentRhythm.pod_id) || podsList[0];
-  }, [currentRhythm, podsList]);
+    if (!currentRhythm?.pod_id) return activePodsPool[0];
+    return (
+      activePodsPool.find((p) => p.id === currentRhythm.pod_id) || activePodsPool[0]
+    );
+  }, [currentRhythm, activePodsPool]);
 
   const podMembers = React.useMemo(() => {
     if (!currentPod) return [];
-    return podMembersMap[currentPod.id] || [];
-  }, [currentPod, podMembersMap]);
+    const baseKey = currentPod.id.replace(/^sample-/, '');
+    const members = podMembersMap[currentPod.id] || podMembersMap[baseKey] || [];
+    if (demoMode) {
+      return members.map((m) => ({
+        ...m,
+        profile: { ...m.profile, is_sample: true },
+      }));
+    }
+    return members;
+  }, [currentPod, podMembersMap, demoMode]);
 
-  const updateRhythmSchedule = (guideSlot: string, podCallSlot: string, podCheckinSlot: string) => {
+  const dismissPodNotification = () => setPodReadyNotification(null);
+
+  const simulatePodReady = () => {
+    const podId = currentPod?.id || 'pod-pm-forming';
+    const baseKey = podId.replace(/^sample-/, '');
+    const additionalMembers: PodMember[] = [
+      {
+        pod_id: baseKey,
+        user_id: 'user-claire',
+        joined_at: new Date().toISOString(),
+        profile: {
+          id: 'user-claire',
+          first_name: 'Claire',
+          last_initial: 'W.',
+          city: 'London',
+          avatar_color: '#2D6B8F',
+          share_contact_with_pod: true,
+        },
+        move_line: 'B2B Sales → Product Manager',
+      },
+      {
+        pod_id: baseKey,
+        user_id: 'user-rohit',
+        joined_at: new Date().toISOString(),
+        profile: {
+          id: 'user-rohit',
+          first_name: 'Rohit',
+          last_initial: 'V.',
+          city: 'Bengaluru',
+          avatar_color: '#8A5A00',
+          share_contact_with_pod: false,
+        },
+        move_line: 'Account Management → Product Manager',
+      },
+    ];
+
+    setPodMembersMap((prev) => {
+      const existing = prev[baseKey] || [];
+      const merged = [
+        ...existing,
+        ...additionalMembers.filter(
+          (am) => !existing.some((e) => e.user_id === am.user_id)
+        ),
+      ];
+      return { ...prev, [baseKey]: merged };
+    });
+
+    setPodsList((prev) =>
+      prev.map((p) =>
+        p.id === baseKey ? { ...p, status: 'active', members_count: 4 } : p
+      )
+    );
+    setPodReadyNotification(
+      'Your pod is ready! 4 of 4 members have joined and your weekly pod sessions are now active.'
+    );
+  };
+
+  const updateRhythmSchedule = (
+    guideSlot: string,
+    podCallSlot: string,
+    podCheckinSlot: string
+  ) => {
     if (currentRhythm) {
       setCurrentRhythm({ ...currentRhythm, guide_slot: guideSlot });
     }
     if (currentPod) {
       setPodsList((prev) =>
         prev.map((p) =>
-          p.id === currentPod.id ? { ...p, call_slot: podCallSlot, checkin_slot: podCheckinSlot } : p
+          p.id === currentPod.id
+            ? { ...p, call_slot: podCallSlot, checkin_slot: podCheckinSlot }
+            : p
         )
       );
     }
   };
 
+  // Sprint Plan & Milestones (Career Guide owns the plan)
+  const addMilestone = (week: number, title: string, description?: string) => {
+    if (!sprintPlan) return;
+    const newMs: Milestone = {
+      id: `ms-${Date.now()}`,
+      week: Math.min(8, Math.max(1, week)),
+      title: title.trim(),
+      description: description?.trim() || '',
+      completed: false,
+    };
+    setSprintPlan({
+      ...sprintPlan,
+      milestones: [...sprintPlan.milestones, newMs].sort((a, b) => a.week - b.week),
+      updated_at: new Date().toISOString(),
+    });
+  };
+
+  const updateMilestone = (id: string, updates: Partial<Milestone>) => {
+    if (!sprintPlan) return;
+    setSprintPlan({
+      ...sprintPlan,
+      milestones: sprintPlan.milestones.map((m) =>
+        m.id === id ? { ...m, ...updates } : m
+      ),
+      updated_at: new Date().toISOString(),
+    });
+  };
+
+  const removeMilestone = (id: string) => {
+    if (!sprintPlan) return;
+    setSprintPlan({
+      ...sprintPlan,
+      milestones: sprintPlan.milestones.filter((m) => m.id !== id),
+      updated_at: new Date().toISOString(),
+    });
+  };
+
+  const reorderMilestone = (id: string, direction: 'up' | 'down') => {
+    if (!sprintPlan) return;
+    const idx = sprintPlan.milestones.findIndex((m) => m.id === id);
+    if (idx === -1) return;
+    const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+    if (targetIdx < 0 || targetIdx >= sprintPlan.milestones.length) return;
+    const copy = [...sprintPlan.milestones];
+    const [moved] = copy.splice(idx, 1);
+    copy.splice(targetIdx, 0, moved);
+    setSprintPlan({
+      ...sprintPlan,
+      milestones: copy,
+      updated_at: new Date().toISOString(),
+    });
+  };
+
+  const finalisePlan = () => {
+    if (!sprintPlan) return;
+    setSprintPlan({
+      ...sprintPlan,
+      status: 'finalised',
+      updated_at: new Date().toISOString(),
+    });
+  };
+
+  const suggestWeeklyGoal = (goalText: string, week?: number) => {
+    if (!sprintPlan || !goalText.trim()) return;
+    const targetWeek = week || currentRhythm?.week || 1;
+    const existing = sprintPlan.suggested_goals[targetWeek] || [];
+    if (existing.includes(goalText.trim())) return;
+    setSprintPlan({
+      ...sprintPlan,
+      suggested_goals: {
+        ...sprintPlan.suggested_goals,
+        [targetWeek]: [...existing, goalText.trim()],
+      },
+      updated_at: new Date().toISOString(),
+    });
+  };
+
+  const acceptSuggestedGoal = (goalText: string) => {
+    const today = new Date().toISOString().split('T')[0];
+    const newGoal: Goal = {
+      id: `goal-${Date.now()}`,
+      user_id: currentUser?.id || 'user-varun',
+      week_start: today,
+      week_number: currentRhythm?.week || 1,
+      text: goalText,
+      status: 'not_yet',
+      suggested_by_guide: true,
+      updated_at: new Date().toISOString(),
+    };
+    setGoals((prev) => [...prev, newGoal]);
+    dismissSuggestedGoal(goalText);
+  };
+
+  const dismissSuggestedGoal = (goalText: string) => {
+    if (!sprintPlan) return;
+    const targetWeek = currentRhythm?.week || 1;
+    const existing = sprintPlan.suggested_goals[targetWeek] || [];
+    setSprintPlan({
+      ...sprintPlan,
+      suggested_goals: {
+        ...sprintPlan.suggested_goals,
+        [targetWeek]: existing.filter((g) => g !== goalText),
+      },
+    });
+  };
+
+  // Post-Conversation Private Rating (updates guide rating & ranking)
+  const rateConversation = (
+    sessionId: string,
+    helpfulScore: number,
+    moveMatchScore: number
+  ) => {
+    const guideId = currentRhythm?.guide_id || 'guide-arjun-k';
+    const newRating: ConversationRating = {
+      id: `rating-${Date.now()}`,
+      session_id: sessionId,
+      switcher_id: currentUser?.id || 'user-varun',
+      guide_id: guideId,
+      helpful_score: helpfulScore,
+      move_match_score: moveMatchScore,
+      created_at: new Date().toISOString(),
+    };
+    setConversationRatings((prev) => [newRating, ...prev]);
+    setSessions((prev) =>
+      prev.map((s) => (s.id === sessionId ? { ...s, held: true, rated: true } : s))
+    );
+
+    const avgSessionScore = (helpfulScore + moveMatchScore) / 2;
+    setGuidesList((prev) =>
+      prev.map((g) => {
+        if (g.profile.id === guideId.replace(/^sample-/, '')) {
+          const prevCount = g.profile.ratings_count ?? 0;
+          const prevAvg = g.profile.rating_avg ?? 4.8;
+          const nextCount = prevCount + 1;
+          const nextAvg =
+            Math.round(((prevAvg * prevCount + avgSessionScore) / nextCount) * 10) / 10;
+          return {
+            ...g,
+            profile: {
+              ...g.profile,
+              ratings_count: nextCount,
+              rating_avg: nextAvg,
+            },
+          };
+        }
+        return g;
+      })
+    );
+  };
+
   // Goals
   const updateGoalStatus = (goalId: string, status: 'not_yet' | 'partly' | 'done') => {
     setGoals((prev) =>
-      prev.map((g) => (g.id === goalId ? { ...g, status, updated_at: new Date().toISOString() } : g))
+      prev.map((g) =>
+        g.id === goalId ? { ...g, status, updated_at: new Date().toISOString() } : g
+      )
     );
   };
 
@@ -363,11 +1040,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         id: `goal-${Date.now()}-${idx}`,
         user_id: currentUser.id,
         week_start: today,
+        week_number: currentRhythm?.week || 1,
         text: text.trim(),
         status: 'not_yet',
         updated_at: new Date().toISOString(),
       }));
     setGoals(newGoals);
+  };
+
+  const replaceGoal = (goalId: string, newText: string) => {
+    if (!newText.trim()) return;
+    setGoals((prev) =>
+      prev.map((g) =>
+        g.id === goalId
+          ? { ...g, text: newText.trim(), updated_at: new Date().toISOString() }
+          : g
+      )
+    );
   };
 
   // Pod Posts
@@ -409,9 +1098,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const promptId = `prompt-${Date.now()}`;
     const newPrompt: ReachOutPrompt = {
       id: promptId,
-      subject_user_id: currentUser?.id || 'switcher-priya-m',
-      subject_name: currentUser?.first_name || 'Priya',
-      subject_initial: currentUser?.last_initial || 'M.',
+      subject_user_id: currentUser?.id || 'user-varun',
+      subject_name: currentUser?.first_name || 'Varun',
+      subject_initial: currentUser?.last_initial || 'S.',
       audience: 'guide',
       reason: 'few_goals_two_weeks',
       created_at: new Date().toISOString(),
@@ -432,7 +1121,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const resolveReachOutPrompt = (promptId: string) => {
     setReachOutPrompts((prev) =>
-      prev.map((p) => (p.id === promptId ? { ...p, resolved_at: new Date().toISOString() } : p))
+      prev.map((p) =>
+        p.id === promptId ? { ...p, resolved_at: new Date().toISOString() } : p
+      )
     );
   };
 
@@ -450,7 +1141,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   };
 
-  const submitReport = (reportedUserId: string, reportedName: string, reason: string, details: string) => {
+  const submitReport = (
+    reportedUserId: string,
+    reportedName: string,
+    reason: string,
+    details: string
+  ) => {
     if (!currentUser) return;
     const newReport: Report = {
       id: `rep-${Date.now()}`,
@@ -470,8 +1166,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setCurrentUser(null);
     setCurrentMoveProfile(null);
     setCurrentRhythm(null);
+    setSprintPlan(null);
     setGoals([]);
     setStoryAnswers({});
+    localStorage.removeItem(STORAGE_KEY);
   };
 
   const exportDataJson = () => {
@@ -479,6 +1177,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       profile: currentUser,
       move_profile: currentMoveProfile,
       story_answers: storyAnswers,
+      sprint_plan: sprintPlan,
       goals,
       sessions: sessions.filter((s) => s.rhythm_id === currentRhythm?.id),
       posts: podPosts.filter((p) => p.author_id === currentUser?.id),
@@ -488,44 +1187,114 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return JSON.stringify(exportObject, null, 2);
   };
 
-  // Auth / Role switcher helpers
-  const login = (email: string, role: 'switcher' | 'guide' | 'admin', name = 'Demo User') => {
-    const names = name.split(' ');
-    const first = names[0] || 'User';
-    const lastInit = (names[1] ? names[1][0] : 'D') + '.';
-    const user: Profile = {
+  // Auth / Login (distinguishes new user vs returning user)
+  const login = (
+    email: string,
+    role: 'switcher' | 'guide' | 'admin',
+    name = 'Varun S.',
+    isNewUser?: boolean
+  ): { isReturning: boolean; targetRoute: string } => {
+    const cleanEmail = email.trim().toLowerCase();
+    // Returning user check: Bharat's email or admin or existing guide
+    const existingGuide = guidesList.find(
+      (g) => g.profile.email.toLowerCase() === cleanEmail
+    );
+    const isReturningBharat =
+      !isNewUser && cleanEmail === 'bharatk6325@gmail.com' && role === 'switcher';
+
+    if (role === 'admin' || cleanEmail === 'admin@peoplelikeme.app') {
+      const adminUser: Profile = {
+        id: 'admin-1',
+        role: 'admin',
+        first_name: 'Admin',
+        last_initial: 'A.',
+        full_name: 'Platform Admin',
+        email: cleanEmail,
+        city: 'London',
+        avatar_color: '#102A2E',
+        share_contact_with_guide: true,
+        share_contact_with_pod: true,
+        created_at: new Date().toISOString(),
+        status: 'active',
+        onboarding_completed: true,
+      };
+      setCurrentUser(adminUser);
+      return { isReturning: true, targetRoute: '/admin' };
+    }
+
+    if (!isNewUser && existingGuide) {
+      setCurrentUser(existingGuide.profile);
+      return { isReturning: true, targetRoute: '/guide-home' };
+    }
+
+    if (isReturningBharat) {
+      setCurrentUser(DEFAULT_DEMO_SWITCHER.profile);
+      setCurrentMoveProfile(DEFAULT_DEMO_SWITCHER.move_profile);
+      return { isReturning: true, targetRoute: '/home' };
+    }
+
+    // Brand new user journey (e.g. Varun) -> goes to Step 2 (/onboarding/objective)
+    const names = name.trim().split(/\s+/);
+    const first = names[0] || 'Varun';
+    const lastInit =
+      names.length > 1 && names[1]
+        ? names[1][0].toUpperCase() + '.'
+        : 'S.';
+
+    const newUser: Profile = {
       id: `user-${Date.now()}`,
       role,
       first_name: first,
       last_initial: lastInit,
       full_name: `${first} ${lastInit}`,
-      email,
-      city: 'London',
+      email: cleanEmail,
+      city: 'Bengaluru',
       avatar_color: '#102A2E',
       share_contact_with_guide: false,
       share_contact_with_pod: false,
       created_at: new Date().toISOString(),
       status: 'active',
-      verified: role === 'guide',
+      verified: false,
+      onboarding_completed: false,
     };
-    setCurrentUser(user);
-    if (role === 'switcher') {
-      setCurrentMoveProfile(null);
-    }
+
+    setCurrentUser(newUser);
+    setCurrentMoveProfile(null);
+    setDraftedProfile(null);
+    setCurrentRhythm(null);
+    setSprintPlan(null);
+    setGuideRequests([]);
+    setDeclinedGuideIds([]);
+    setRematchOffered(false);
+    setStoryAnswers({});
+    setGoals([]);
+
+    return {
+      isReturning: false,
+      targetRoute: role === 'guide' ? '/become-a-guide' : '/onboarding/objective',
+    };
   };
 
   const logout = () => {
     setCurrentUser(null);
   };
 
-  const switchUser = (type: 'switcher_priya' | 'new_switcher' | 'guide_arjun' | 'guide_dev' | 'guide_vikram' | 'admin') => {
+  const switchUser = (
+    type:
+      | 'switcher_priya'
+      | 'new_switcher'
+      | 'guide_arjun'
+      | 'guide_dev'
+      | 'guide_vikram'
+      | 'admin'
+  ) => {
     if (type === 'switcher_priya') {
       setCurrentUser(DEFAULT_DEMO_SWITCHER.profile);
       setCurrentMoveProfile(DEFAULT_DEMO_SWITCHER.move_profile);
       setCurrentRhythm({
         id: 'rhythm-bharat-1',
         switcher_id: 'user-bharat-k',
-        guide_id: 'guide-vikram-s',
+        guide_id: 'guide-arjun-k',
         pod_id: 'pod-pm-forming',
         start_date: new Date().toISOString().split('T')[0],
         week: 1,
@@ -534,25 +1303,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       });
       setGoals(DEFAULT_DEMO_SWITCHER.goals);
     } else if (type === 'new_switcher') {
-      const freshUser: Profile = {
-        id: 'switcher-fresh',
-        role: 'switcher',
-        first_name: 'Alex',
-        last_initial: 'N.',
-        full_name: 'Alex N.',
-        email: 'alex.n@example.com',
-        city: 'Bengaluru',
-        avatar_color: '#2D6B8F',
-        share_contact_with_guide: false,
-        share_contact_with_pod: false,
-        created_at: new Date().toISOString(),
-        status: 'active',
-      };
-      setCurrentUser(freshUser);
-      setCurrentMoveProfile(null);
-      setCurrentRhythm(null);
-      setStoryAnswers({});
-      setGoals([]);
+      login('varun@example.com', 'switcher', 'Varun S.', true);
     } else if (type === 'guide_vikram') {
       const vikram = guidesList.find((g) => g.profile.id === 'guide-vikram-s')?.profile;
       if (vikram) setCurrentUser(vikram);
@@ -576,11 +1327,201 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         share_contact_with_pod: true,
         created_at: new Date().toISOString(),
         status: 'active',
+        onboarding_completed: true,
       });
     }
   };
 
-  // Admin Actions
+  // Career Guide Applications & Admin Queue (Section 4)
+  const submitGuideApplication = (
+    appData: Omit<
+      CareerGuideApplication,
+      'id' | 'created_at' | 'status' | 'checks'
+    >
+  ): CareerGuideApplication => {
+    const mismatchFlags: string[] = [];
+    if (appData.years_in_earlier_role < 2) {
+      mismatchFlags.push(
+        `Earlier role (${appData.years_in_earlier_role}y) is less than required 2 years.`
+      );
+    }
+    if (appData.years_in_current_role < 1) {
+      mismatchFlags.push(
+        `Current role (${appData.years_in_current_role}y) is less than required 1 year.`
+      );
+    }
+    if (!appData.linkedin_connected) {
+      mismatchFlags.push('LinkedIn profile not yet connected.');
+    }
+    if (!appData.work_email_verified) {
+      mismatchFlags.push('Work email not yet verified.');
+    }
+
+    const moveFound =
+      appData.years_in_earlier_role >= 2 && appData.years_in_current_role >= 1;
+
+    const newApp: CareerGuideApplication = {
+      ...appData,
+      id: `app-${Date.now()}`,
+      checks: {
+        linkedin_connected: appData.linkedin_connected,
+        email_verified: appData.work_email_verified,
+        move_found: moveFound,
+        mismatch_flags: mismatchFlags,
+      },
+      status: 'under_review',
+      created_at: new Date().toISOString(),
+    };
+
+    setGuideApplications((prev) => [newApp, ...prev]);
+
+    const names = appData.full_name.trim().split(/\s+/);
+    const first = names[0] || 'Guide';
+    const lastInit = names[1] ? `${names[1][0].toUpperCase()}.` : 'G.';
+    const guideProfile: Profile = {
+      id: appData.user_id || `guide-${Date.now()}`,
+      role: 'guide',
+      first_name: first,
+      last_initial: lastInit,
+      full_name: `${first} ${lastInit}`,
+      email: appData.email,
+      city: appData.city || 'Bengaluru',
+      gender: appData.gender || 'Female',
+      avatar_color: '#102A2E',
+      share_contact_with_guide: true,
+      share_contact_with_pod: true,
+      created_at: new Date().toISOString(),
+      status: 'pending_approval',
+      verified: false,
+      application_status: 'under_review',
+      linkedin_url: appData.linkedin_url,
+      ratings_count: 0,
+      guided_count: 0,
+    };
+
+    setCurrentUser(guideProfile);
+    return newApp;
+  };
+
+  const approveGuideApplication = (appId: string) => {
+    const app = guideApplications.find((a) => a.id === appId);
+    setGuideApplications((prev) =>
+      prev.map((a) => (a.id === appId ? { ...a, status: 'approved' } : a))
+    );
+
+    if (app) {
+      const names = app.full_name.trim().split(/\s+/);
+      const first = names[0] || 'Guide';
+      const lastInit = names[1] ? `${names[1][0].toUpperCase()}.` : 'G.';
+
+      const approvedSeedGuide: SeedGuide = {
+        profile: {
+          id: app.user_id,
+          role: 'guide',
+          first_name: first,
+          last_initial: lastInit,
+          full_name: `${first} ${lastInit}`,
+          email: app.email,
+          city: app.city || 'Bengaluru',
+          gender: app.gender || 'Female',
+          avatar_color: '#2F7D5B',
+          share_contact_with_guide: true,
+          share_contact_with_pod: true,
+          created_at: app.created_at,
+          verified: true,
+          status: 'active',
+          application_status: 'approved',
+          linkedin_url: app.linkedin_url,
+          rating_avg: 5.0,
+          ratings_count: 0,
+          guided_count: 0,
+          is_sample: false,
+        },
+        move_profile: {
+          user_id: app.user_id,
+          from_role: app.from_role,
+          from_field: app.from_field || 'Sales',
+          from_company_type: 'Tech company',
+          to_role: app.to_role,
+          years_experience: app.years_in_earlier_role,
+          months_since_leaving: null,
+          dependants: 'None',
+          priority: 'Speed to role',
+          availability: [
+            'Weekday evenings (6:00 PM – 8:00 PM)',
+            'Weekend mornings (9:00 AM – 12:00 PM)',
+          ],
+          constraints: [],
+          went_back: app.went_back,
+          years_since_move: app.years_since_move || 2,
+          story: app.story,
+          confirmed_at: new Date().toISOString(),
+        },
+        active_switchers_count: 0,
+      };
+
+      setGuidesList((prev) => {
+        const exists = prev.some((g) => g.profile.id === app.user_id);
+        if (exists) {
+          return prev.map((g) =>
+            g.profile.id === app.user_id ? approvedSeedGuide : g
+          );
+        }
+        return [approvedSeedGuide, ...prev];
+      });
+
+      if (currentUser?.id === app.user_id) {
+        setCurrentUser({
+          ...currentUser,
+          verified: true,
+          status: 'active',
+          application_status: 'approved',
+        });
+      }
+    }
+  };
+
+  const rejectGuideApplication = (appId: string, note?: string) => {
+    const app = guideApplications.find((a) => a.id === appId);
+    setGuideApplications((prev) =>
+      prev.map((a) =>
+        a.id === appId ? { ...a, status: 'rejected', admin_note: note } : a
+      )
+    );
+    if (app && currentUser?.id === app.user_id) {
+      setCurrentUser({
+        ...currentUser,
+        status: 'rejected',
+        application_status: 'rejected',
+      });
+    }
+  };
+
+  const askMoreGuideApplication = (appId: string, note?: string) => {
+    const app = guideApplications.find((a) => a.id === appId);
+    setGuideApplications((prev) =>
+      prev.map((a) =>
+        a.id === appId
+          ? {
+              ...a,
+              status: 'needs_more',
+              admin_note:
+                note ||
+                'Please share a bit more detail on your transition timeline and CV work history.',
+            }
+          : a
+      )
+    );
+    if (app && currentUser?.id === app.user_id) {
+      setCurrentUser({
+        ...currentUser,
+        status: 'needs_more',
+        application_status: 'needs_more',
+      });
+    }
+  };
+
+  // Legacy Admin Actions
   const pendingGuideApprovals = guidesList
     .filter((g) => g.profile.status === 'pending_approval' || !g.profile.verified)
     .map((g) => g.profile);
@@ -589,7 +1530,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setGuidesList((prev) =>
       prev.map((g) =>
         g.profile.id === guideId
-          ? { ...g, profile: { ...g.profile, verified: true, status: 'active' } }
+          ? {
+              ...g,
+              profile: {
+                ...g.profile,
+                verified: true,
+                status: 'active',
+                application_status: 'approved',
+              },
+            }
           : g
       )
     );
@@ -597,15 +1546,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const resolveReport = (reportId: string, action: 'dismiss' | 'pause_user') => {
     setReportsList((prev) =>
-      prev.map((r) => (r.id === reportId ? { ...r, status: action === 'dismiss' ? 'dismissed' : 'resolved' } : r))
+      prev.map((r) =>
+        r.id === reportId
+          ? { ...r, status: action === 'dismiss' ? 'dismissed' : 'resolved' }
+          : r
+      )
     );
     if (action === 'pause_user') {
       const rep = reportsList.find((r) => r.id === reportId);
       if (rep) {
-        // Pause reported user
         setGuidesList((prev) =>
           prev.map((g) =>
-            g.profile.id === rep.reported_user_id ? { ...g, profile: { ...g.profile, status: 'paused' } } : g
+            g.profile.id === rep.reported_user_id
+              ? { ...g, profile: { ...g.profile, status: 'paused' } }
+              : g
           )
         );
       }
@@ -618,7 +1572,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setCurrentRhythm({ ...currentRhythm, status: 'landed' });
     }
     if (shareWinWithPod && currentPod && currentUser) {
-      addPodPost('I landed my new role! Thank you all for the support and check-ins over these weeks.', true);
+      addPodPost(
+        'I landed my new role! Thank you all for the support and check-ins over these weeks.',
+        true
+      );
     }
   };
 
@@ -633,6 +1590,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const resetAllData = () => {
+    localStorage.removeItem(STORAGE_KEY);
     setCurrentUser(DEFAULT_DEMO_SWITCHER.profile);
     setCurrentMoveProfile(DEFAULT_DEMO_SWITCHER.move_profile);
     setGoals(DEFAULT_DEMO_SWITCHER.goals);
@@ -640,6 +1598,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setPodsList(SEED_PODS);
     setPodPosts(SEED_POD_POSTS);
     setGuideRequests([]);
+    setDeclinedGuideIds([]);
+    setGuideApplications(SEED_GUIDE_APPLICATIONS);
     setReachOutPrompts([]);
     setRematchOffered(false);
   };
@@ -651,9 +1611,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         currentMoveProfile,
         theme,
         toggleTheme,
+        demoMode,
+        setDemoMode,
         login,
         logout,
         switchUser,
+        setUserObjective,
         storyAnswers,
         saveStoryAnswer,
         backgroundInfo,
@@ -663,6 +1626,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         draftedProfile,
         setDraftedProfile,
         confirmMoveProfile,
+        updateMatchingParameters,
         guideCandidates,
         activeRequest,
         rematchOffered,
@@ -674,11 +1638,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         currentRhythm,
         currentPod,
         podMembers,
+        podReadyNotification,
+        dismissPodNotification,
+        simulatePodReady,
         sessions,
         updateRhythmSchedule,
+        sprintPlan,
+        addMilestone,
+        updateMilestone,
+        removeMilestone,
+        reorderMilestone,
+        finalisePlan,
+        suggestWeeklyGoal,
+        acceptSuggestedGoal,
+        dismissSuggestedGoal,
+        conversationRatings,
+        rateConversation,
         goals,
         updateGoalStatus,
         saveWeeklyGoals,
+        replaceGoal,
         podPosts,
         addPodPost,
         toggleCheer,
@@ -696,6 +1675,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         guidesList,
         pendingGuideApprovals,
         approveGuide,
+        guideApplications,
+        submitGuideApplication,
+        approveGuideApplication,
+        rejectGuideApplication,
+        askMoreGuideApplication,
         reportsList,
         resolveReport,
         markLanded,

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { Clock, FastForward, HeartHandshake, Moon, RotateCcw, Sun, ChevronDown, ChevronUp, User } from 'lucide-react';
+import { Clock, FastForward, HeartHandshake, Moon, RotateCcw, Sun, ChevronDown, ChevronUp, User, FlaskConical } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export const WalkthroughToolbar: React.FC = () => {
@@ -14,6 +14,8 @@ export const WalkthroughToolbar: React.FC = () => {
     theme,
     toggleTheme,
     currentRhythm,
+    demoMode,
+    setDemoMode,
   } = useApp();
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
@@ -30,7 +32,7 @@ export const WalkthroughToolbar: React.FC = () => {
             </span>
             {currentRhythm && (
               <span className="text-[10px] text-[#A6B8B0] ml-1 border-l border-[#2A403C] pl-1.5">
-                Week {currentRhythm.week}/8
+                Week {currentRhythm.week} of 8
               </span>
             )}
           </div>
@@ -39,19 +41,34 @@ export const WalkthroughToolbar: React.FC = () => {
         <div className="flex items-center gap-1.5 flex-wrap">
           {!collapsed && (
             <>
-              {/* Test Personas Dropdown (for testing guide view or admin view) */}
+              {/* DEMO_MODE Toggle */}
+              <button
+                type="button"
+                onClick={() => setDemoMode(!demoMode)}
+                className={`px-2.5 py-1 rounded-full border text-[11px] flex items-center gap-1 transition-colors ${
+                  demoMode
+                    ? 'bg-[#F2B134]/20 border-[#F2B134] text-[#F2B134] font-semibold'
+                    : 'bg-[#0B1D20] hover:bg-[#122523] border-[#2A403C] text-[#A6B8B0] hover:text-white'
+                }`}
+                title="Toggle DEMO_MODE (12 sample Career Guides & 2 sample pods)"
+              >
+                <FlaskConical className="w-3 h-3" />
+                <span>Demo Mode: {demoMode ? 'ON' : 'OFF'}</span>
+              </button>
+
+              {/* Test Personas Dropdown (for testing Career Guide view or Admin view) */}
               <div className="relative">
                 <button
                   type="button"
                   onClick={() => setShowPersonaDropdown(!showPersonaDropdown)}
                   className="px-2.5 py-1 rounded-full bg-[#0B1D20] hover:bg-[#122523] border border-[#2A403C] text-[11px] text-[#A6B8B0] hover:text-white flex items-center gap-1 transition-colors"
                 >
-                  <span>Switch Role / Test Guide</span>
+                  <span>Switch Role / Test Career Guide</span>
                   <ChevronDown className="w-3 h-3" />
                 </button>
 
                 {showPersonaDropdown && (
-                  <div className="absolute right-0 top-full mt-1 w-56 bg-[#0B1D20] border border-[#2A403C] rounded-xl shadow-xl p-1.5 z-50 space-y-1">
+                  <div className="absolute right-0 top-full mt-1 w-60 bg-[#0B1D20] border border-[#2A403C] rounded-xl shadow-xl p-1.5 z-50 space-y-1">
                     <button
                       onClick={() => {
                         switchUser('switcher_priya');
@@ -65,23 +82,23 @@ export const WalkthroughToolbar: React.FC = () => {
                     </button>
                     <button
                       onClick={() => {
-                        switchUser('guide_vikram');
-                        setShowPersonaDropdown(false);
-                        navigate('/guide-home');
-                      }}
-                      className="w-full text-left px-2.5 py-1.5 rounded-lg text-[11px] hover:bg-[#122523] text-[#A6B8B0] hover:text-white"
-                    >
-                      Vikram S. (Test Guide - Bengaluru)
-                    </button>
-                    <button
-                      onClick={() => {
                         switchUser('guide_arjun');
                         setShowPersonaDropdown(false);
                         navigate('/guide-home');
                       }}
                       className="w-full text-left px-2.5 py-1.5 rounded-lg text-[11px] hover:bg-[#122523] text-[#A6B8B0] hover:text-white"
                     >
-                      Arjun K. (Guide View - 1:1)
+                      Arjun K. (Career Guide - 1:1)
+                    </button>
+                    <button
+                      onClick={() => {
+                        switchUser('guide_vikram');
+                        setShowPersonaDropdown(false);
+                        navigate('/guide-home');
+                      }}
+                      className="w-full text-left px-2.5 py-1.5 rounded-lg text-[11px] hover:bg-[#122523] text-[#A6B8B0] hover:text-white"
+                    >
+                      Vikram S. (Career Guide - Bengaluru)
                     </button>
                     <button
                       onClick={() => {
@@ -91,7 +108,7 @@ export const WalkthroughToolbar: React.FC = () => {
                       }}
                       className="w-full text-left px-2.5 py-1.5 rounded-lg text-[11px] hover:bg-[#122523] text-[#A6B8B0] hover:text-white"
                     >
-                      Dev M. (Guide - Went Back)
+                      Dev M. (Career Guide - Went Back)
                     </button>
                     <button
                       onClick={() => {
@@ -112,7 +129,7 @@ export const WalkthroughToolbar: React.FC = () => {
                 <button
                   onClick={simulate48HourExpiry}
                   className="px-2 py-1 rounded bg-[#0B1D20] hover:bg-[#122523] border border-[#2A403C] text-[11px] flex items-center gap-1 text-[#E58C73]"
-                  title="Simulate 48-Hour guide expiration to see automatic rematch state"
+                  title="Simulate 48-Hour Career Guide expiration to see automatic rematch state"
                 >
                   <Clock className="w-3 h-3" />
                   <span className="hidden md:inline">Simulate</span> 48h Rematch

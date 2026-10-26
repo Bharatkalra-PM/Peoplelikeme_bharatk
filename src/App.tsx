@@ -8,6 +8,7 @@ import { ReportModal } from './components/ReportModal';
 // Screens
 import { Welcome } from './pages/Welcome';
 import { SignUp } from './pages/SignUp';
+import { Objective } from './pages/onboarding/Objective';
 import { Story } from './pages/onboarding/Story';
 import { Background } from './pages/onboarding/Background';
 import { Details } from './pages/onboarding/Details';
@@ -47,7 +48,8 @@ export default function App() {
             <Route path="/" element={<Welcome />} />
             <Route path="/signup" element={<SignUp />} />
 
-            {/* 4-Step Story Onboarding */}
+            {/* Step 2: Objective & 4-Step Story Onboarding */}
+            <Route path="/onboarding/objective" element={<Objective />} />
             <Route path="/onboarding/story" element={<Story />} />
             <Route path="/onboarding/background" element={<Background />} />
             <Route path="/onboarding/details" element={<Details />} />

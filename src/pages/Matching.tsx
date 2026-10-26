@@ -29,7 +29,7 @@ export const Matching: React.FC = () => {
             Finding your people
           </h1>
           <p className="text-sm text-[#55665F] dark:text-[#A6B8B0]">
-            Checking guides who made your exact move 1–5 years ago and pods forming at your stage...
+            Checking Career Guides who made your move and pods forming at your stage...
           </p>
         </div>
 

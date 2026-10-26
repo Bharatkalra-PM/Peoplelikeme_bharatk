@@ -79,17 +79,17 @@ export const Settings: React.FC = () => {
           </h2>
         </div>
         <p className="text-xs text-[#55665F] dark:text-[#A6B8B0]">
-          By default, peers and guides only see your first name and last initial. You can choose to share your email and full name.
+          By default, peers and Career Guides only see your first name and last initial. You can choose to share your email and full name.
         </p>
 
         <div className="space-y-3 pt-2">
           <label className="flex items-center justify-between p-3 rounded-xl border border-[#D3DDD8]/60 dark:border-[#2A403C] cursor-pointer hover:bg-[#F1F5F2]/40 dark:hover:bg-[#122523]/40">
             <div>
               <p className="text-xs font-medium text-[#13231F] dark:text-[#E6EEEA]">
-                Share contact details with my Guide
+                Share contact details with my Career Guide
               </p>
               <p className="text-[11px] text-[#55665F] dark:text-[#A6B8B0]">
-                Allows your guide to reach you via email for scheduling questions.
+                Allows your Career Guide to reach you via email for scheduling questions.
               </p>
             </div>
             <input

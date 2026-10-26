@@ -1,53 +1,137 @@
-import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { InitialsAvatar } from '../components/InitialsAvatar';
 import {
-  Calendar,
   CheckCircle,
   Circle,
-  Clock,
   Video,
   ArrowRight,
   Plus,
   Heart,
-  MessageSquare,
-  AlertCircle,
   Compass,
+  Flag,
+  Sparkles,
+  Users,
+  Clock,
+  Check,
 } from 'lucide-react';
 
 export const Home: React.FC = () => {
   const {
-    currentUser,
     currentRhythm,
+    activeRequest,
+    guidesList,
+    sprintPlan,
     sessions,
     goals,
+    suggestedGoals,
+    acceptSuggestedGoal,
+    dismissSuggestedGoal,
     updateGoalStatus,
     podPosts,
     toggleCheer,
-    currentPod,
+    userPod,
     reachOutPrompts,
+    simulatePodReady,
+    podReadyNotification,
+    dismissPodNotification,
   } = useApp();
-  const navigate = useNavigate();
 
-  const isWeek1 = (currentRhythm?.week || 1) === 1;
+  const [editingSuggestionId, setEditingSuggestionId] = useState<string | null>(null);
+  const [editingSuggestionText, setEditingSuggestionText] = useState('');
+
+  // STEP 4: Home before matching — single focused "Your next step" card: "Choose your Career Guide".
+  // Nothing else competes for attention.
+  if (!currentRhythm && (!activeRequest || activeRequest.status !== 'pending')) {
+    return (
+      <div className="max-w-xl mx-auto py-8 space-y-6">
+        <div className="pb-2 border-b border-[#D3DDD8] dark:border-[#2A403C]">
+          <h1 className="font-heading text-2xl sm:text-3xl font-normal text-[#13231F] dark:text-[#E6EEEA]">
+            Home
+          </h1>
+          <p className="text-xs sm:text-sm text-[#55665F] dark:text-[#A6B8B0] mt-0.5">
+            Your move profile is ready.
+          </p>
+        </div>
+
+        <div
+          data-testid="next-step-choose-guide-card"
+          className="bg-[#FFFFFF] dark:bg-[#0E1E1D] border border-[#D3DDD8] dark:border-[#2A403C] rounded-2xl p-6 sm:p-8 space-y-5 shadow-xs"
+        >
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#F2B134]/15 text-[#8A5A00] dark:text-[#F2B134] text-xs font-semibold uppercase tracking-wider">
+            <Compass className="w-3.5 h-3.5" />
+            <span>Your next step</span>
+          </div>
+
+          <div className="space-y-2">
+            <h2 className="font-heading text-2xl font-normal text-[#13231F] dark:text-[#E6EEEA]">
+              Choose your Career Guide
+            </h2>
+            <p className="text-sm text-[#55665F] dark:text-[#A6B8B0] leading-relaxed">
+              We have matched your profile against people who have already made the move you are working toward. Review your closest matches and ask one to guide your 8-week sprint.
+            </p>
+          </div>
+
+          <Link
+            to="/guides"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-full bg-[#102A2E] hover:bg-[#193d43] dark:bg-[#F2B134] dark:hover:bg-[#e0a32e] text-white dark:text-[#102A2E] text-xs sm:text-sm font-semibold transition-colors shadow-xs"
+          >
+            <span>Choose your Career Guide</span>
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // Waiting on Career Guide reply state
+  if (!currentRhythm && activeRequest?.status === 'pending') {
+    const requestedGuide = guidesList.find((g) => g.profile.id === activeRequest.guide_id) || guidesList[0];
+    return (
+      <div className="max-w-xl mx-auto py-8 space-y-6">
+        <div className="bg-[#FFFFFF] dark:bg-[#0E1E1D] border border-[#D3DDD8] dark:border-[#2A403C] rounded-2xl p-6 sm:p-8 space-y-4 shadow-xs">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#F2B134]/15 text-[#8A5A00] dark:text-[#F2B134] text-xs font-semibold">
+            <Clock className="w-3.5 h-3.5" />
+            <span>Awaiting Career Guide reply</span>
+          </div>
+          <h1 className="font-heading text-2xl font-normal text-[#13231F] dark:text-[#E6EEEA]">
+            Request sent. {requestedGuide.profile.first_name} will reply within 48 hours.
+          </h1>
+          <p className="text-sm text-[#55665F] dark:text-[#A6B8B0]">
+            If he can't, we'll offer your next best match automatically.
+          </p>
+          <Link
+            to="/request-sent"
+            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#102A2E] dark:bg-[#F2B134] text-white dark:text-[#102A2E] text-xs font-semibold"
+          >
+            <span>View request & pod status</span>
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // STEP 8 & 9: Active 8-week sprint
+  const currentWeek = currentRhythm?.week || 1;
+  const matchedGuide =
+    guidesList.find((g) => g.profile.id === currentRhythm?.guide_id)?.profile || guidesList[0].profile;
   const hasNoGoals = goals.length === 0;
-
-  // Nudge calculation (only when true, plain words, no red alerts)
   const doneGoalsCount = goals.filter((g) => g.status === 'done').length;
+
   let nudgeText: string | null = null;
   if (hasNoGoals) {
-    nudgeText = 'Welcome to week 1. Start by setting this week’s goals.';
+    nudgeText = 'Welcome to Week 1. Start by setting this week’s goals.';
   } else if (goals.length > 0 && doneGoalsCount < goals.length) {
     nudgeText = `${doneGoalsCount} of ${goals.length} done this week`;
   }
 
-  // Active slip prompts for pod audience
-  const podSlipPrompt = reachOutPrompts.find(
-    (p) => p.audience === 'pod' && !p.resolved_at
-  );
+  const podSlipPrompt = reachOutPrompts.find((p) => p.audience === 'pod' && !p.resolved_at);
+  const podMembersCount = userPod ? userPod.members.length : 5;
+  const podTargetSize = userPod?.target_size || 4;
+  const isPodForming = podMembersCount < 4;
 
-  // Determine if session is active (from 10 min before until end)
   const isSessionJoinable = (startsAt: string, durationMin: number) => {
     const startMs = new Date(startsAt).getTime();
     const endMs = startMs + durationMin * 60 * 1000;
@@ -66,20 +150,23 @@ export const Home: React.FC = () => {
     return `in ${mins}m`;
   };
 
+  const sortedMilestones = sprintPlan
+    ? [...sprintPlan.milestones].sort((a, b) => a.order - b.order)
+    : [];
+
   return (
     <div className="space-y-8">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-[#D3DDD8] dark:border-[#2A403C]">
         <div>
           <h1 className="font-heading text-2xl sm:text-3xl font-normal text-[#13231F] dark:text-[#E6EEEA]">
-            Week {currentRhythm?.week || 1}
+            Week {currentWeek} of 8
           </h1>
           <p className="text-xs sm:text-sm text-[#55665F] dark:text-[#A6B8B0] mt-0.5">
-            Eight-week sprint • {currentPod?.name || 'Your Pod'}
+            Career Guide: {matchedGuide.first_name} {matchedGuide.last_initial} • {userPod?.name || 'Your Pod'}
           </p>
         </div>
 
-        {/* Nudge if true (Section 10 & 3: Plain words, no warning red) */}
         {nudgeText && (
           <div className="self-start sm:self-auto px-3.5 py-1.5 rounded-full bg-[#FFFFFF] dark:bg-[#0E1E1D] border border-[#D3DDD8] dark:border-[#2A403C] text-xs font-medium text-[#55665F] dark:text-[#A6B8B0] flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-[#F2B134]" />
@@ -88,40 +175,126 @@ export const Home: React.FC = () => {
         )}
       </div>
 
-      {/* Empty State for first day if no goals */}
-      {hasNoGoals && (
-        <div className="bg-[#FFFFFF] dark:bg-[#0E1E1D] border border-[#D3DDD8] dark:border-[#2A403C] rounded-2xl p-6 sm:p-8 text-center space-y-4 shadow-xs">
-          <div className="w-10 h-10 rounded-full bg-[#F2B134]/15 text-[#8A5A00] dark:text-[#F2B134] mx-auto flex items-center justify-center font-semibold">
-            1
+      {/* Pod Notification or Pod Forming Banner (Step 7) */}
+      {podReadyNotification && (
+        <div className="p-4 rounded-2xl bg-[#2F7D5B]/10 border border-[#2F7D5B]/30 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2.5 text-xs font-medium text-[#2F7D5B] dark:text-[#5FBF8F]">
+            <CheckCircle className="w-4 h-4 shrink-0" />
+            <span>{podReadyNotification}</span>
           </div>
-          <div className="space-y-1">
-            <h2 className="font-heading text-lg text-[#13231F] dark:text-[#E6EEEA]">
-              Welcome to week 1
-            </h2>
-            <p className="text-xs text-[#55665F] dark:text-[#A6B8B0] max-w-sm mx-auto">
-              Start by setting this week’s two or three goals. Your guide and pod will see them to help keep you accountable.
-            </p>
-          </div>
-          <Link
-            to="/goals"
-            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#102A2E] hover:bg-[#193d43] dark:bg-[#F2B134] dark:hover:bg-[#e0a32e] text-white dark:text-[#102A2E] text-xs font-medium transition-colors shadow-xs"
+          <button
+            type="button"
+            onClick={dismissPodNotification}
+            className="text-xs text-[#2F7D5B] dark:text-[#5FBF8F] underline"
           >
-            <Plus className="w-4 h-4" />
-            <span>Set this week’s goals</span>
-          </Link>
+            Dismiss
+          </button>
         </div>
       )}
 
-      {/* Up Next Sessions (Section 3 Correction 7: readable width & 'Opens 10 min before' under join button) */}
+      {isPodForming && (
+        <div
+          data-testid="pod-forming-banner"
+          className="p-4 rounded-2xl bg-[#FFFFFF] dark:bg-[#0E1E1D] border border-[#D3DDD8] dark:border-[#2A403C] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs"
+        >
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 text-xs font-semibold text-[#13231F] dark:text-[#E6EEEA]">
+              <Users className="w-4 h-4 text-[#2D6B8F] dark:text-[#89BBD6]" />
+              <span>Your pod is forming. {podMembersCount} of {podTargetSize} have joined.</span>
+            </div>
+            <p className="text-xs text-[#55665F] dark:text-[#A6B8B0]">
+              You have started with your Career Guide alone. We will notify you as soon as your pod is ready.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={simulatePodReady}
+            className="self-start sm:self-auto px-3.5 py-1.5 rounded-full border border-[#D3DDD8] dark:border-[#2A403C] text-xs font-medium text-[#2D6B8F] dark:text-[#89BBD6] hover:bg-[#F1F5F2] dark:hover:bg-[#122523] shrink-0"
+          >
+            Simulate: Pod ready
+          </button>
+        </div>
+      )}
+
+      {/* 8-Week Timeline & Personal Milestones (Step 8 & 9) */}
+      {sprintPlan && (
+        <section className="space-y-3" data-testid="eight-week-plan-section">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-[#55665F] dark:text-[#A6B8B0] flex items-center gap-1.5">
+              <Flag className="w-3.5 h-3.5 text-[#F2B134]" />
+              <span>Your 8-Week Plan & Personal Milestones</span>
+            </h2>
+            <span
+              data-testid="plan-status-badge"
+              className={`text-xs font-medium px-3 py-1 rounded-full ${
+                sprintPlan.status === 'finalised'
+                  ? 'bg-[#2F7D5B]/15 text-[#2F7D5B] dark:text-[#5FBF8F]'
+                  : 'bg-[#F2B134]/15 text-[#8A5A00] dark:text-[#F2B134]'
+              }`}
+            >
+              {sprintPlan.status === 'finalised'
+                ? `Finalised with ${matchedGuide.first_name}`
+                : `Draft: you'll finalise this with ${matchedGuide.first_name} in your first conversation.`}
+            </span>
+          </div>
+
+          <div className="bg-[#FFFFFF] dark:bg-[#0E1E1D] border border-[#D3DDD8] dark:border-[#2A403C] rounded-2xl p-5 space-y-5 shadow-xs">
+            {/* 8-Week Progress Timeline Bar */}
+            <div className="grid grid-cols-8 gap-1.5">
+              {Array.from({ length: 8 }).map((_, idx) => {
+                const wk = idx + 1;
+                const isCurrent = wk === currentWeek;
+                const isPast = wk < currentWeek;
+                return (
+                  <div
+                    key={wk}
+                    className={`p-2 rounded-xl border text-center transition-colors ${
+                      isCurrent
+                        ? 'border-[#F2B134] bg-[#F2B134]/15 text-[#13231F] dark:text-[#E6EEEA] font-semibold'
+                        : isPast
+                        ? 'border-[#2F7D5B]/40 bg-[#2F7D5B]/10 text-[#2F7D5B] dark:text-[#5FBF8F]'
+                        : 'border-[#D3DDD8]/60 dark:border-[#2A403C] text-[#55665F] dark:text-[#A6B8B0]'
+                    }`}
+                  >
+                    <span className="text-[10px] block">Wk {wk}</span>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Milestones list */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {sortedMilestones.map((m) => (
+                <div
+                  key={m.id}
+                  data-testid="milestone-card"
+                  className="p-3.5 rounded-xl bg-[#F1F5F2]/60 dark:bg-[#122523]/60 border border-[#D3DDD8]/70 dark:border-[#2A403C] flex items-start justify-between gap-3"
+                >
+                  <div className="space-y-0.5">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-[#8A5A00] dark:text-[#F2B134]">
+                      Target: Week {m.target_week}
+                    </span>
+                    <p className="text-xs sm:text-sm font-medium text-[#13231F] dark:text-[#E6EEEA]">
+                      {m.title}
+                    </p>
+                  </div>
+                  {m.completed && (
+                    <CheckCircle className="w-4 h-4 text-[#2F7D5B] dark:text-[#5FBF8F] shrink-0 mt-1" />
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Up Next Sessions */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-[#55665F] dark:text-[#A6B8B0]">
-            Up Next
+            Up Next (Week {currentWeek})
           </h2>
-          <Link
-            to="/guide"
-            className="text-xs text-[#2D6B8F] dark:text-[#7FB6D6] hover:underline"
-          >
+          <Link to="/guide" className="text-xs text-[#2D6B8F] dark:text-[#7FB6D6] hover:underline">
             All conversations →
           </Link>
         </div>
@@ -142,7 +315,6 @@ export const Home: React.FC = () => {
                 key={session.id}
                 className="bg-[#FFFFFF] dark:bg-[#0E1E1D] border border-[#D3DDD8] dark:border-[#2A403C] rounded-2xl p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xs"
               >
-                {/* Session Details at readable width */}
                 <div className="space-y-1.5 max-w-xl">
                   <div className="flex items-center gap-2">
                     <span
@@ -152,7 +324,7 @@ export const Home: React.FC = () => {
                           : 'bg-[#2F7D5B]/10 text-[#2F7D5B] dark:text-[#5FBF8F]'
                       }`}
                     >
-                      {session.kind === 'guide' ? '30-min Guide Conversation' : 'Pod Call'}
+                      {session.kind === 'guide' ? '30-min Career Guide Conversation' : 'Pod Call'}
                     </span>
                     <span className="text-xs text-[#55665F] dark:text-[#A6B8B0]">
                       {formattedTime}
@@ -170,7 +342,6 @@ export const Home: React.FC = () => {
                   )}
                 </div>
 
-                {/* Action button & 'Opens 10 min before' under the Join button strictly */}
                 <div className="flex flex-col items-start md:items-end gap-1 shrink-0">
                   {isJoinable ? (
                     <a
@@ -190,7 +361,6 @@ export const Home: React.FC = () => {
                       {getTimeUntilSession(session.starts_at)}
                     </button>
                   )}
-                  {/* Under Join button as required by Section 3 Correction 7 */}
                   <span className="text-[10px] text-[#55665F] dark:text-[#A6B8B0]">
                     Opens 10 min before
                   </span>
@@ -201,25 +371,103 @@ export const Home: React.FC = () => {
         </div>
       </section>
 
-      {/* This Week's Goals (Section 3: check marks rather than strikethrough for done goals) */}
+      {/* Suggested Goals from Career Guide (if any) */}
+      {suggestedGoals.length > 0 && (
+        <section className="space-y-3" data-testid="suggested-goals-section">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-[#8A5A00] dark:text-[#F2B134] flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Suggested Goals from your Career Guide</span>
+          </h2>
+          <div className="bg-[#FFFFFF] dark:bg-[#0E1E1D] border border-[#F2B134]/50 rounded-2xl p-5 space-y-3 shadow-xs">
+            {suggestedGoals.map((sg) => (
+              <div
+                key={sg.id}
+                className="p-3.5 rounded-xl bg-[#F1F5F2]/60 dark:bg-[#122523]/60 border border-[#D3DDD8] dark:border-[#2A403C] flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+              >
+                {editingSuggestionId === sg.id ? (
+                  <div className="flex-1 flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={editingSuggestionText}
+                      onChange={(e) => setEditingSuggestionText(e.target.value)}
+                      className="flex-1 px-3 py-1.5 rounded-lg border border-[#D3DDD8] dark:border-[#2A403C] bg-white dark:bg-[#0E1E1D] text-xs"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        acceptSuggestedGoal(sg.id, editingSuggestionText);
+                        setEditingSuggestionId(null);
+                      }}
+                      className="px-3 py-1.5 rounded-full bg-[#102A2E] dark:bg-[#F2B134] text-white dark:text-[#102A2E] text-xs font-medium"
+                    >
+                      Save
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <span className="text-xs sm:text-sm font-medium text-[#13231F] dark:text-[#E6EEEA]">
+                      {sg.text}
+                    </span>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => acceptSuggestedGoal(sg.id)}
+                        className="px-3 py-1 rounded-full bg-[#2F7D5B] text-white text-xs font-medium flex items-center gap-1"
+                      >
+                        <Check className="w-3 h-3" />
+                        <span>Accept</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingSuggestionId(sg.id);
+                          setEditingSuggestionText(sg.text);
+                        }}
+                        className="px-3 py-1 rounded-full border border-[#D3DDD8] dark:border-[#2A403C] text-xs font-medium"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => dismissSuggestedGoal(sg.id)}
+                        className="px-3 py-1 rounded-full border border-[#D3DDD8] dark:border-[#2A403C] text-xs text-[#A8432C] dark:text-[#E58C73]"
+                      >
+                        Replace
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* This Week's Goals */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-[#55665F] dark:text-[#A6B8B0]">
             This Week’s Goals
           </h2>
-          <Link
-            to="/goals"
-            className="text-xs text-[#2D6B8F] dark:text-[#7FB6D6] hover:underline"
-          >
+          <Link to="/goals" className="text-xs text-[#2D6B8F] dark:text-[#7FB6D6] hover:underline">
             Edit goals →
           </Link>
         </div>
 
         <div className="bg-[#FFFFFF] dark:bg-[#0E1E1D] border border-[#D3DDD8] dark:border-[#2A403C] rounded-2xl p-5 space-y-3 shadow-xs">
           {goals.length === 0 ? (
-            <p className="text-xs text-[#55665F] dark:text-[#A6B8B0] py-2">
-              No goals set yet for this week.
-            </p>
+            <div className="text-center py-4 space-y-2">
+              <p className="text-xs text-[#55665F] dark:text-[#A6B8B0]">
+                No goals set yet for this week.
+              </p>
+              <Link
+                to="/goals"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#102A2E] dark:bg-[#F2B134] text-white dark:text-[#102A2E] text-xs font-medium"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Set this week’s goals</span>
+              </Link>
+            </div>
           ) : (
             <div className="space-y-2.5">
               {goals.map((goal) => {
@@ -232,7 +480,6 @@ export const Home: React.FC = () => {
                     className="p-3 rounded-xl border border-[#D3DDD8]/60 dark:border-[#2A403C] flex items-center justify-between gap-3 hover:bg-[#F1F5F2]/30 dark:hover:bg-[#122523]/30 transition-colors"
                   >
                     <div className="flex items-center gap-3">
-                      {/* Three-state toggle button */}
                       <button
                         type="button"
                         onClick={() => {
@@ -245,7 +492,6 @@ export const Home: React.FC = () => {
                         aria-label={`Toggle goal status from ${goal.status}`}
                       >
                         {isDone ? (
-                          /* Check mark rather than strikethrough */
                           <CheckCircle className="w-5 h-5 text-[#2F7D5B] dark:text-[#5FBF8F]" />
                         ) : isPartly ? (
                           <div className="w-5 h-5 rounded-full border-2 border-[#F2B134] flex items-center justify-center">
@@ -256,7 +502,6 @@ export const Home: React.FC = () => {
                         )}
                       </button>
 
-                      {/* Text: check marks rather than strikethrough for done goals */}
                       <span className="text-xs sm:text-sm font-medium text-[#13231F] dark:text-[#E6EEEA]">
                         {goal.text}
                       </span>
@@ -287,10 +532,7 @@ export const Home: React.FC = () => {
           <h2 className="text-xs font-semibold uppercase tracking-wider text-[#55665F] dark:text-[#A6B8B0]">
             From Your Pod
           </h2>
-          <Link
-            to="/pod"
-            className="text-xs text-[#2D6B8F] dark:text-[#7FB6D6] hover:underline"
-          >
+          <Link to="/pod" className="text-xs text-[#2D6B8F] dark:text-[#7FB6D6] hover:underline">
             Open pod space →
           </Link>
         </div>

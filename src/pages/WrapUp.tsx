@@ -51,7 +51,7 @@ export const WrapUp: React.FC = () => {
             </h2>
             <p className="text-xs sm:text-sm text-[#55665F] dark:text-[#A6B8B0] max-w-md mx-auto">
               {selectedOption === 'landed'
-                ? 'Your sprint has been marked as landed. You can continue helping others by becoming a guide when you’re settled.'
+                ? 'Your sprint has been marked as landed. You can continue helping others by becoming a Career Guide when you’re settled.'
                 : 'Your sessions and pod connection will remain open.'}
             </p>
           </div>
@@ -62,7 +62,7 @@ export const WrapUp: React.FC = () => {
                 to="/become-a-guide"
                 className="px-6 py-2.5 rounded-full bg-[#102A2E] dark:bg-[#F2B134] text-white dark:text-[#102A2E] text-xs font-semibold"
               >
-                Become a Guide
+                Become a Career Guide
               </Link>
             )}
             <Link
@@ -85,7 +85,7 @@ export const WrapUp: React.FC = () => {
                 I’ve landed a role
               </h2>
               <p className="text-xs text-[#55665F] dark:text-[#A6B8B0] leading-relaxed">
-                Celebrate quietly with your pod, complete this sprint cycle, and pay it forward as a guide later.
+                Celebrate quietly with your pod, complete this sprint cycle, and pay it forward as a Career Guide later.
               </p>
 
               <label className="flex items-center gap-2 pt-2 text-xs text-[#55665F] dark:text-[#A6B8B0] cursor-pointer">
@@ -115,7 +115,7 @@ export const WrapUp: React.FC = () => {
                 <Users className="w-5 h-5" />
               </div>
               <h2 className="text-base font-semibold text-[#13231F] dark:text-[#E6EEEA]">
-                Continue with this guide & pod
+                Continue with this Career Guide & pod
               </h2>
               <p className="text-xs text-[#55665F] dark:text-[#A6B8B0] leading-relaxed">
                 Maintain your weekly conversations and accountability rhythm with your current group.
@@ -141,7 +141,7 @@ export const WrapUp: React.FC = () => {
                 Start a fresh match
               </h2>
               <p className="text-xs text-[#55665F] dark:text-[#A6B8B0] leading-relaxed">
-                Connect with a different guide or join a new pod cohort at your current stage.
+                Connect with a different Career Guide or join a new pod cohort at your current stage.
               </p>
             </div>
 

@@ -54,10 +54,12 @@ export const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }
     : [
         { label: 'Home', to: '/home', icon: Home },
         { label: 'Pod', to: '/pod', icon: Users },
-        { label: 'Guide', to: '/guide', icon: Compass },
+        { label: 'Career Guide', to: '/guide', icon: Compass },
         { label: 'Goals', to: '/goals', icon: CheckSquare },
         { label: 'Settings', to: '/settings', icon: Settings },
       ];
+
+  const roleLabel = isGuide ? 'Career Guide' : isAdmin ? 'Admin' : 'Career Switcher';
 
   return (
     <div className="min-h-screen bg-[#F1F5F2] dark:bg-[#122523] flex flex-col md:flex-row">
@@ -75,9 +77,9 @@ export const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }
               <p className="text-xs font-medium text-[#13231F] dark:text-[#E6EEEA] truncate">
                 {currentUser.first_name} {currentUser.last_initial}
               </p>
-              <p className="text-[11px] text-[#55665F] dark:text-[#A6B8B0] capitalize truncate">
-                {currentUser.role}
-                {currentRhythm && !isGuide ? ` • Week ${currentRhythm.week}` : ''}
+              <p className="text-[11px] text-[#55665F] dark:text-[#A6B8B0] truncate">
+                {roleLabel}
+                {currentRhythm && !isGuide ? ` • Week ${currentRhythm.week} of 8` : ''}
               </p>
             </div>
           </div>
@@ -130,7 +132,14 @@ export const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }
         {/* Mobile Header */}
         <header className="md:hidden flex items-center justify-between p-4 border-b border-[#D3DDD8] dark:border-[#2A403C] bg-[#FFFFFF] dark:bg-[#0E1E1D]">
           <BrandMark linkTo={isGuide ? '/guide-home' : '/home'} />
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={logout}
+              className="text-xs text-[#A8432C] dark:text-[#E58C73] font-medium flex items-center gap-1"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Sign out</span>
+            </button>
             <InitialsAvatar firstName={currentUser.first_name} lastInitial={currentUser.last_initial} size="sm" />
           </div>
         </header>

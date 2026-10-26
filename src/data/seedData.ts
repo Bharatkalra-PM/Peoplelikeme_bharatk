@@ -1,4 +1,12 @@
-import { MoveProfile, Pod, PodMember, PodPost, Profile, Session, Goal } from '../types';
+import {
+  CareerGuideApplication,
+  Goal,
+  MoveProfile,
+  Pod,
+  PodMember,
+  PodPost,
+  Profile,
+} from '../types';
 
 export interface SeedGuide {
   profile: Profile;
@@ -6,8 +14,51 @@ export interface SeedGuide {
   active_switchers_count: number;
 }
 
-export const SEED_GUIDES: SeedGuide[] = [
-  // Dedicated Test Guide for Bharat & General Switchers
+const BASE_GUIDES: SeedGuide[] = [
+  // 1. Arjun K. (Primary reference Career Guide in prompt: Sales -> Product Manager, 2 years ago)
+  {
+    profile: {
+      id: 'guide-arjun-k',
+      role: 'guide',
+      first_name: 'Arjun',
+      last_initial: 'K.',
+      full_name: 'Arjun K.',
+      email: 'arjun.k@example.com',
+      city: 'Bengaluru',
+      gender: 'Male',
+      avatar_color: '#2F7D5B',
+      share_contact_with_guide: true,
+      share_contact_with_pod: true,
+      created_at: '2025-01-10T08:00:00Z',
+      verified: true,
+      status: 'active',
+      application_status: 'approved',
+      rating_avg: 4.9,
+      ratings_count: 8,
+      guided_count: 6,
+      is_sample: false,
+    },
+    move_profile: {
+      user_id: 'guide-arjun-k',
+      from_role: 'Sales',
+      from_field: 'Consumer goods & B2B SaaS',
+      from_company_type: 'Growth-stage startup',
+      to_role: 'Product Manager',
+      years_experience: 5,
+      months_since_leaving: null,
+      dependants: 'None',
+      priority: 'Speed to role',
+      availability: ['Weekday evenings (6:00 PM – 8:00 PM)', 'Weekend mornings (9:00 AM – 12:00 PM)'],
+      constraints: ['Self-taught tech knowledge'],
+      went_back: false,
+      years_since_move: 2,
+      story:
+        'Spent 5 years closing consumer goods and enterprise deals before realizing I wanted to solve the product friction my customers kept running into. Built side projects and transitioned internally first.',
+      confirmed_at: '2025-01-12T10:00:00Z',
+    },
+    active_switchers_count: 0,
+  },
+  // 2. Vikram S. (Operations & Strategy -> Product Manager, 2 years ago)
   {
     profile: {
       id: 'guide-vikram-s',
@@ -17,12 +68,18 @@ export const SEED_GUIDES: SeedGuide[] = [
       full_name: 'Vikram S.',
       email: 'vikram.s@example.com',
       city: 'Bengaluru',
+      gender: 'Male',
       avatar_color: '#102A2E',
       share_contact_with_guide: true,
       share_contact_with_pod: true,
       created_at: '2025-01-05T08:00:00Z',
       verified: true,
       status: 'active',
+      application_status: 'approved',
+      rating_avg: 4.8,
+      ratings_count: 5,
+      guided_count: 5,
+      is_sample: false,
     },
     move_profile: {
       user_id: 'guide-vikram-s',
@@ -33,52 +90,18 @@ export const SEED_GUIDES: SeedGuide[] = [
       years_experience: 6,
       months_since_leaving: null,
       dependants: 'None',
-      priority: 'Speed to role (Fastest transition)',
+      priority: 'Speed to role',
       availability: ['Weekday evenings (6:00 PM – 8:00 PM)', 'Weekend mornings (9:00 AM – 12:00 PM)'],
       constraints: ['Self-taught tech knowledge'],
       went_back: false,
       years_since_move: 2,
-      story: 'Transitioned from corporate strategy and operations into software product management. Passionate about helping career switchers convert domain knowledge into product leadership.',
+      story:
+        'Transitioned from corporate strategy and operations into software product management. Passionate about helping career switchers convert domain knowledge into product leadership.',
       confirmed_at: '2025-01-08T10:00:00Z',
     },
     active_switchers_count: 0,
   },
-  // Move 1: Sales to Product (4 guides)
-  {
-    profile: {
-      id: 'guide-arjun-k',
-      role: 'guide',
-      first_name: 'Arjun',
-      last_initial: 'K.',
-      full_name: 'Arjun K.',
-      email: 'arjun.k@example.com',
-      city: 'Bengaluru',
-      avatar_color: '#2F7D5B',
-      share_contact_with_guide: true,
-      share_contact_with_pod: true,
-      created_at: '2025-01-10T08:00:00Z',
-      verified: true,
-      status: 'active',
-    },
-    move_profile: {
-      user_id: 'guide-arjun-k',
-      from_role: 'B2B SaaS Sales Lead',
-      from_field: 'Sales',
-      from_company_type: 'Growth-stage startup',
-      to_role: 'Product Manager',
-      years_experience: 5,
-      months_since_leaving: null,
-      dependants: 'None',
-      priority: 'Speed to role',
-      availability: ['Weekday evenings', 'Weekend mornings'],
-      constraints: ['Self-taught tech knowledge'],
-      went_back: false,
-      years_since_move: 2,
-      story: 'Spent 5 years closing enterprise software deals before realizing I wanted to solve the product friction my customers kept running into. Built side projects and transitioned internally first.',
-      confirmed_at: '2025-01-12T10:00:00Z',
-    },
-    active_switchers_count: 0,
-  },
+  // 3. Sarah M. (Account Executive -> Product Manager, 3 years ago)
   {
     profile: {
       id: 'guide-sarah-m',
@@ -88,12 +111,18 @@ export const SEED_GUIDES: SeedGuide[] = [
       full_name: 'Sarah M.',
       email: 'sarah.m@example.com',
       city: 'London',
+      gender: 'Female',
       avatar_color: '#2D6B8F',
       share_contact_with_guide: true,
       share_contact_with_pod: false,
       created_at: '2025-02-01T09:00:00Z',
       verified: true,
       status: 'active',
+      application_status: 'approved',
+      rating_avg: 4.9,
+      ratings_count: 7,
+      guided_count: 7,
+      is_sample: false,
     },
     move_profile: {
       user_id: 'guide-sarah-m',
@@ -105,15 +134,17 @@ export const SEED_GUIDES: SeedGuide[] = [
       months_since_leaving: null,
       dependants: 'Children',
       priority: 'Work-life balance',
-      availability: ['Weekday evenings'],
+      availability: ['Weekday evenings (6:00 PM – 8:00 PM)'],
       constraints: ['Caregiving duties', 'Notice period'],
       went_back: false,
       years_since_move: 3,
-      story: 'Switched roles while raising a toddler. The biggest challenge was unlearning quota anxiety and learning how to say no to roadmap bloat with empathy.',
+      story:
+        'Switched roles while raising a toddler. The biggest challenge was unlearning quota anxiety and learning how to say no to roadmap bloat with empathy.',
       confirmed_at: '2025-02-03T11:00:00Z',
     },
     active_switchers_count: 1,
   },
+  // 4. Dev M. (Went back guide, New guide with < 3 ratings)
   {
     profile: {
       id: 'guide-dev-m',
@@ -123,32 +154,40 @@ export const SEED_GUIDES: SeedGuide[] = [
       full_name: 'Dev M.',
       email: 'dev.m@example.com',
       city: 'London',
+      gender: 'Male',
       avatar_color: '#102A2E',
       share_contact_with_guide: true,
       share_contact_with_pod: true,
       created_at: '2024-11-15T08:00:00Z',
       verified: true,
       status: 'active',
+      application_status: 'approved',
+      rating_avg: 4.7,
+      ratings_count: 2, // < 3 ratings -> shows "New"
+      guided_count: 2,
+      is_sample: false,
     },
     move_profile: {
       user_id: 'guide-dev-m',
       from_role: 'Retail Sales Manager',
-      from_field: 'Sales',
+      from_field: 'Consumer goods',
       from_company_type: 'Consumer retail',
       to_role: 'Associate PM',
       years_experience: 4,
       months_since_leaving: null,
       dependants: 'None',
       priority: 'Domain fit',
-      availability: ['Weekday evenings', 'Weekend mornings'],
+      availability: ['Weekday evenings (6:00 PM – 8:00 PM)', 'Weekend mornings (9:00 AM – 12:00 PM)'],
       constraints: ['No engineering degree'],
-      went_back: true, // The famous went_back guide from PRD
+      went_back: true,
       years_since_move: 2,
-      story: 'Moved from retail sales into an associate product manager role for 18 months, before deciding enterprise sales leadership was actually my better long-term fit. I share transparently what PM is really like.',
+      story:
+        'Moved from retail sales into an associate product manager role for 18 months, before deciding enterprise sales leadership was actually my better long-term fit. I share transparently what PM is really like.',
       confirmed_at: '2024-11-18T10:00:00Z',
     },
     active_switchers_count: 0,
   },
+  // 5. Marcus T.
   {
     profile: {
       id: 'guide-marcus-t',
@@ -158,12 +197,18 @@ export const SEED_GUIDES: SeedGuide[] = [
       full_name: 'Marcus T.',
       email: 'marcus.t@example.com',
       city: 'Remote',
+      gender: 'Male',
       avatar_color: '#8A5A00',
       share_contact_with_guide: true,
       share_contact_with_pod: true,
       created_at: '2025-03-01T12:00:00Z',
       verified: true,
       status: 'active',
+      application_status: 'approved',
+      rating_avg: 4.8,
+      ratings_count: 4,
+      guided_count: 4,
+      is_sample: false,
     },
     move_profile: {
       user_id: 'guide-marcus-t',
@@ -175,17 +220,17 @@ export const SEED_GUIDES: SeedGuide[] = [
       months_since_leaving: null,
       dependants: 'Partner',
       priority: 'Target salary',
-      availability: ['Weekday lunchtimes', 'Weekend mornings'],
+      availability: ['Weekday lunchtimes (12:30 PM – 2:00 PM)', 'Weekend mornings (9:00 AM – 12:00 PM)'],
       constraints: [],
       went_back: false,
       years_since_move: 4,
-      story: 'Bridged customer demos and architecture for years before officially taking over an API platform roadmap. Technical credibility helped immensely.',
+      story:
+        'Bridged customer demos and architecture for years before officially taking over an API platform roadmap. Technical credibility helped immensely.',
       confirmed_at: '2025-03-05T14:00:00Z',
     },
     active_switchers_count: 0,
   },
-
-  // Move 2: Engineering to Product (4 guides)
+  // 6. Ananya R. (Female guide in Bengaluru, Engineering -> PM)
   {
     profile: {
       id: 'guide-ananya-r',
@@ -195,12 +240,18 @@ export const SEED_GUIDES: SeedGuide[] = [
       full_name: 'Ananya R.',
       email: 'ananya.r@example.com',
       city: 'Bengaluru',
+      gender: 'Female',
       avatar_color: '#2F7D5B',
       share_contact_with_guide: true,
       share_contact_with_pod: true,
       created_at: '2025-01-20T10:00:00Z',
       verified: true,
       status: 'active',
+      application_status: 'approved',
+      rating_avg: 5.0,
+      ratings_count: 6,
+      guided_count: 6,
+      is_sample: false,
     },
     move_profile: {
       user_id: 'guide-ananya-r',
@@ -212,15 +263,17 @@ export const SEED_GUIDES: SeedGuide[] = [
       months_since_leaving: null,
       dependants: 'None',
       priority: 'Speed to role',
-      availability: ['Weekday evenings', 'Weekend mornings'],
+      availability: ['Weekday evenings (6:00 PM – 8:00 PM)', 'Weekend mornings (9:00 AM – 12:00 PM)'],
       constraints: ['Shifting mindset from how to why'],
       went_back: false,
       years_since_move: 2,
-      story: 'I loved writing code, but cared even more about whether we were building the right features. Made an internal transfer by writing specs engineers loved.',
+      story:
+        'I loved writing code, but cared even more about whether we were building the right features. Made an internal transfer by writing specs engineers loved.',
       confirmed_at: '2025-01-25T11:00:00Z',
     },
     active_switchers_count: 0,
   },
+  // 7. Elena V. (New guide with 1 rating)
   {
     profile: {
       id: 'guide-elena-v',
@@ -230,12 +283,18 @@ export const SEED_GUIDES: SeedGuide[] = [
       full_name: 'Elena V.',
       email: 'elena.v@example.com',
       city: 'London',
+      gender: 'Female',
       avatar_color: '#2D6B8F',
       share_contact_with_guide: true,
       share_contact_with_pod: true,
       created_at: '2025-02-14T09:00:00Z',
       verified: true,
       status: 'active',
+      application_status: 'approved',
+      rating_avg: 5.0,
+      ratings_count: 1, // < 3 ratings -> shows "New"
+      guided_count: 1,
+      is_sample: false,
     },
     move_profile: {
       user_id: 'guide-elena-v',
@@ -247,15 +306,17 @@ export const SEED_GUIDES: SeedGuide[] = [
       months_since_leaving: null,
       dependants: 'Partner',
       priority: 'Domain fit',
-      availability: ['Weekday evenings'],
+      availability: ['Weekday evenings (6:00 PM – 8:00 PM)'],
       constraints: [],
       went_back: false,
       years_since_move: 1,
-      story: 'Agency life gave me huge breadth across 20+ client apps. Learned how to conduct user discovery and translated that into my first PM role at a healthtech startup.',
+      story:
+        'Agency life gave me huge breadth across 20+ client apps. Learned how to conduct user discovery and translated that into my first PM role at a healthtech startup.',
       confirmed_at: '2025-02-18T10:00:00Z',
     },
     active_switchers_count: 1,
   },
+  // 8. Karthik S.
   {
     profile: {
       id: 'guide-karthik-s',
@@ -265,12 +326,18 @@ export const SEED_GUIDES: SeedGuide[] = [
       full_name: 'Karthik S.',
       email: 'karthik.s@example.com',
       city: 'Remote',
+      gender: 'Male',
       avatar_color: '#102A2E',
       share_contact_with_guide: true,
       share_contact_with_pod: false,
       created_at: '2024-12-01T14:00:00Z',
       verified: true,
       status: 'active',
+      application_status: 'approved',
+      rating_avg: 4.8,
+      ratings_count: 5,
+      guided_count: 5,
+      is_sample: false,
     },
     move_profile: {
       user_id: 'guide-karthik-s',
@@ -282,52 +349,17 @@ export const SEED_GUIDES: SeedGuide[] = [
       months_since_leaving: null,
       dependants: 'Children',
       priority: 'Work-life balance',
-      availability: ['Weekend mornings'],
+      availability: ['Weekend mornings (9:00 AM – 12:00 PM)'],
       constraints: ['Childcare in mornings'],
       went_back: false,
       years_since_move: 3,
-      story: 'Transitioned directly into Platform TPM. The key was showing business impact beyond tickets closed.',
+      story:
+        'Transitioned directly into Platform TPM. The key was showing business impact beyond tickets closed.',
       confirmed_at: '2024-12-05T15:00:00Z',
     },
     active_switchers_count: 0,
   },
-  {
-    profile: {
-      id: 'guide-liam-c',
-      role: 'guide',
-      first_name: 'Liam',
-      last_initial: 'C.',
-      full_name: 'Liam C.',
-      email: 'liam.c@example.com',
-      city: 'New York',
-      avatar_color: '#A8432C',
-      share_contact_with_guide: true,
-      share_contact_with_pod: true,
-      created_at: '2025-01-05T16:00:00Z',
-      verified: true,
-      status: 'active',
-    },
-    move_profile: {
-      user_id: 'guide-liam-c',
-      from_role: 'QA / Test Lead',
-      from_field: 'Engineering',
-      from_company_type: 'Large enterprise',
-      to_role: 'Product Manager',
-      years_experience: 6,
-      months_since_leaving: null,
-      dependants: 'Elderly parents',
-      priority: 'Target salary',
-      availability: ['Weekday lunchtimes', 'Weekday evenings'],
-      constraints: ['Elderly care commitments'],
-      went_back: false,
-      years_since_move: 2,
-      story: 'Testing edge cases made me obsessed with user flow holes. Pitched improvements directly to execs to make the switch.',
-      confirmed_at: '2025-01-08T18:00:00Z',
-    },
-    active_switchers_count: 0,
-  },
-
-  // Move 3: Corporate Roles to Product Design (4 guides)
+  // 9. Meera B. (Consultant -> Product Designer)
   {
     profile: {
       id: 'guide-meera-b',
@@ -337,12 +369,18 @@ export const SEED_GUIDES: SeedGuide[] = [
       full_name: 'Meera B.',
       email: 'meera.b@example.com',
       city: 'Bengaluru',
+      gender: 'Female',
       avatar_color: '#2F7D5B',
       share_contact_with_guide: true,
       share_contact_with_pod: true,
       created_at: '2025-02-10T11:00:00Z',
       verified: true,
       status: 'active',
+      application_status: 'approved',
+      rating_avg: 4.9,
+      ratings_count: 6,
+      guided_count: 5,
+      is_sample: false,
     },
     move_profile: {
       user_id: 'guide-meera-b',
@@ -354,15 +392,17 @@ export const SEED_GUIDES: SeedGuide[] = [
       months_since_leaving: null,
       dependants: 'None',
       priority: 'Domain fit',
-      availability: ['Weekday evenings', 'Weekend mornings'],
+      availability: ['Weekday evenings (6:00 PM – 8:00 PM)', 'Weekend mornings (9:00 AM – 12:00 PM)'],
       constraints: ['No formal art background'],
       went_back: false,
       years_since_move: 2,
-      story: 'Left slide decks and spreadsheets to build tactile digital experiences. Systematic analytical rigor turned out to be a massive advantage in complex UI systems.',
+      story:
+        'Left slide decks and spreadsheets to build tactile digital experiences. Systematic analytical rigor turned out to be a massive advantage in complex UI systems.',
       confirmed_at: '2025-02-15T12:00:00Z',
     },
     active_switchers_count: 0,
   },
+  // 10. Tobias K.
   {
     profile: {
       id: 'guide-tobias-k',
@@ -372,12 +412,18 @@ export const SEED_GUIDES: SeedGuide[] = [
       full_name: 'Tobias K.',
       email: 'tobias.k@example.com',
       city: 'London',
+      gender: 'Male',
       avatar_color: '#2D6B8F',
       share_contact_with_guide: true,
       share_contact_with_pod: true,
       created_at: '2025-01-18T10:00:00Z',
       verified: true,
       status: 'active',
+      application_status: 'approved',
+      rating_avg: 4.7,
+      ratings_count: 4,
+      guided_count: 4,
+      is_sample: false,
     },
     move_profile: {
       user_id: 'guide-tobias-k',
@@ -389,15 +435,17 @@ export const SEED_GUIDES: SeedGuide[] = [
       months_since_leaving: null,
       dependants: 'Children',
       priority: 'Work-life balance',
-      availability: ['Weekday evenings'],
+      availability: ['Weekday evenings (6:00 PM – 8:00 PM)'],
       constraints: ['Transitioned at age 34'],
       went_back: false,
       years_since_move: 3,
-      story: 'Physical architecture felt slow and bureaucratic. The speed of digital iteration blew my mind. Portfolio storytelling made all the difference.',
+      story:
+        'Physical architecture felt slow and bureaucratic. The speed of digital iteration blew my mind. Portfolio storytelling made all the difference.',
       confirmed_at: '2025-01-22T14:00:00Z',
     },
     active_switchers_count: 1,
   },
+  // 11. Rachel H. (Went back guide)
   {
     profile: {
       id: 'guide-rachel-h',
@@ -407,12 +455,18 @@ export const SEED_GUIDES: SeedGuide[] = [
       full_name: 'Rachel H.',
       email: 'rachel.h@example.com',
       city: 'Remote',
+      gender: 'Female',
       avatar_color: '#102A2E',
       share_contact_with_guide: true,
       share_contact_with_pod: false,
       created_at: '2024-10-12T08:00:00Z',
       verified: true,
       status: 'active',
+      application_status: 'approved',
+      rating_avg: 4.8,
+      ratings_count: 3,
+      guided_count: 3,
+      is_sample: false,
     },
     move_profile: {
       user_id: 'guide-rachel-h',
@@ -424,15 +478,17 @@ export const SEED_GUIDES: SeedGuide[] = [
       months_since_leaving: null,
       dependants: 'None',
       priority: 'Speed to role',
-      availability: ['Weekend mornings', 'Weekday lunchtimes'],
+      availability: ['Weekend mornings (9:00 AM – 12:00 PM)', 'Weekday lunchtimes (12:30 PM – 2:00 PM)'],
       constraints: [],
-      went_back: true, // Went back guide
+      went_back: true,
       years_since_move: 3,
-      story: 'Spent 1.5 years as a junior UX designer at a boutique studio before recognizing I missed the operational problem-solving of supply chains.',
+      story:
+        'Spent 1.5 years as a junior UX designer at a boutique studio before recognizing I missed the operational problem-solving of supply chains.',
       confirmed_at: '2024-10-16T09:00:00Z',
     },
     active_switchers_count: 0,
   },
+  // 12. Omar Z.
   {
     profile: {
       id: 'guide-omar-z',
@@ -442,12 +498,18 @@ export const SEED_GUIDES: SeedGuide[] = [
       full_name: 'Omar Z.',
       email: 'omar.z@example.com',
       city: 'Bengaluru',
+      gender: 'Male',
       avatar_color: '#8A5A00',
       share_contact_with_guide: true,
       share_contact_with_pod: true,
       created_at: '2025-03-02T11:00:00Z',
       verified: true,
       status: 'active',
+      application_status: 'approved',
+      rating_avg: 4.9,
+      ratings_count: 1, // New guide
+      guided_count: 1,
+      is_sample: false,
     },
     move_profile: {
       user_id: 'guide-omar-z',
@@ -459,31 +521,50 @@ export const SEED_GUIDES: SeedGuide[] = [
       months_since_leaving: null,
       dependants: 'Partner',
       priority: 'Target salary',
-      availability: ['Weekday evenings', 'Weekend mornings'],
+      availability: ['Weekday evenings (6:00 PM – 8:00 PM)', 'Weekend mornings (9:00 AM – 12:00 PM)'],
       constraints: ['Self-funded bootcamp graduate'],
       went_back: false,
       years_since_move: 2,
-      story: 'Turned customer psychology from advertising into interaction patterns. Now designing SaaS tools with high conversion focus.',
+      story:
+        'Turned customer psychology from advertising into interaction patterns. Now designing SaaS tools with high conversion focus.',
       confirmed_at: '2025-03-06T15:00:00Z',
     },
     active_switchers_count: 0,
   },
 ];
 
-// Sample Forming & Active Pods
+export const SEED_GUIDES: SeedGuide[] = BASE_GUIDES;
+
+// 12 Sample Career Guides for DEMO_MODE = true (every sample person labelled "Sample profile")
+export const DEMO_SAMPLE_GUIDES: SeedGuide[] = BASE_GUIDES.map((g, idx) => ({
+  ...g,
+  profile: {
+    ...g.profile,
+    id: `sample-${g.profile.id}`,
+    is_sample: true,
+  },
+  move_profile: {
+    ...g.move_profile,
+    user_id: `sample-${g.profile.id}`,
+  },
+  active_switchers_count: idx % 3 === 2 ? 1 : 0,
+}));
+
+// Pods: includes a forming pod (with 1 other peer so when user joins, "2 of 4 have joined") and an active pod
 export const SEED_PODS: Pod[] = [
   {
     id: 'pod-pm-forming',
-    name: 'Sales → PM Pod (Spring)',
+    name: 'Sales & Ops → PM Pod',
     created_at: '2025-03-01T10:00:00Z',
     status: 'forming',
     target_role: 'Product Manager',
-    members_count: 3,
+    members_count: 2,
     max_members: 6,
     call_slot: 'Thursdays 7:00 PM',
     checkin_slot: 'Tuesdays 1:00 PM',
     agenda: 'Kickoff: Aligning on target company sizes and resume tear-downs',
     host_name: 'Anand T.',
+    is_sample: false,
   },
   {
     id: 'pod-design-active',
@@ -497,8 +578,15 @@ export const SEED_PODS: Pod[] = [
     checkin_slot: 'Mondays 12:30 PM',
     agenda: 'Case study review: How to present non-design background as an unfair advantage',
     host_name: 'Mira N.',
+    is_sample: false,
   },
 ];
+
+export const DEMO_SAMPLE_PODS: Pod[] = SEED_PODS.map((p) => ({
+  ...p,
+  id: `sample-${p.id}`,
+  is_sample: true,
+}));
 
 export const SEED_POD_MEMBERS: Record<string, PodMember[]> = {
   'pod-pm-forming': [
@@ -513,40 +601,10 @@ export const SEED_POD_MEMBERS: Record<string, PodMember[]> = {
         city: 'Bengaluru',
         avatar_color: '#2F7D5B',
         share_contact_with_pod: false,
+        is_sample: false,
       },
       move_line: 'Enterprise Sales → Product Manager',
       last_posted_at: '2025-03-08T14:00:00Z',
-    },
-    {
-      pod_id: 'pod-pm-forming',
-      user_id: 'user-claire',
-      joined_at: '2025-03-02T11:00:00Z',
-      profile: {
-        id: 'user-claire',
-        first_name: 'Claire',
-        last_initial: 'W.',
-        city: 'London',
-        avatar_color: '#2D6B8F',
-        share_contact_with_pod: true,
-      },
-      move_line: 'B2B Sales → Product Manager',
-      last_posted_at: '2025-03-07T09:00:00Z',
-    },
-    {
-      pod_id: 'pod-pm-forming',
-      user_id: 'user-rohit',
-      joined_at: '2025-03-04T16:00:00Z',
-      profile: {
-        id: 'user-rohit',
-        first_name: 'Rohit',
-        last_initial: 'V.',
-        city: 'Bengaluru',
-        avatar_color: '#8A5A00',
-        share_contact_with_pod: false,
-      },
-      move_line: 'Account Management → Product Manager',
-      // No recent post to demonstrate the check-in prompt!
-      last_posted_at: '2025-02-24T10:00:00Z',
     },
   ],
   'pod-design-active': [
@@ -561,6 +619,7 @@ export const SEED_POD_MEMBERS: Record<string, PodMember[]> = {
         city: 'Bengaluru',
         avatar_color: '#2F7D5B',
         share_contact_with_pod: true,
+        is_sample: false,
       },
       move_line: 'Strategy Consultant → Product Designer',
       last_posted_at: '2025-03-08T11:00:00Z',
@@ -576,6 +635,7 @@ export const SEED_POD_MEMBERS: Record<string, PodMember[]> = {
         city: 'London',
         avatar_color: '#2D6B8F',
         share_contact_with_pod: false,
+        is_sample: false,
       },
       move_line: 'Operations Analyst → Product Designer',
       last_posted_at: '2025-03-09T08:00:00Z',
@@ -591,6 +651,7 @@ export const SEED_POD_MEMBERS: Record<string, PodMember[]> = {
         city: 'Bengaluru',
         avatar_color: '#102A2E',
         share_contact_with_pod: false,
+        is_sample: false,
       },
       move_line: 'Brand Strategist → Product Designer',
       last_posted_at: '2025-03-05T12:00:00Z',
@@ -606,24 +667,10 @@ export const SEED_POD_MEMBERS: Record<string, PodMember[]> = {
         city: 'Remote',
         avatar_color: '#A8432C',
         share_contact_with_pod: true,
+        is_sample: false,
       },
       move_line: 'Project Manager → Product Designer',
       last_posted_at: '2025-03-06T18:00:00Z',
-    },
-    {
-      pod_id: 'pod-design-active',
-      user_id: 'user-kavita',
-      joined_at: '2025-02-15T10:00:00Z',
-      profile: {
-        id: 'user-kavita',
-        first_name: 'Kavita',
-        last_initial: 'S.',
-        city: 'Bengaluru',
-        avatar_color: '#8A5A00',
-        share_contact_with_pod: false,
-      },
-      move_line: 'Corporate Finance → Product Designer',
-      last_posted_at: '2025-02-22T08:00:00Z',
     },
   ],
 };
@@ -656,6 +703,46 @@ export const SEED_POD_POSTS: PodPost[] = [
   },
 ];
 
+// Initial Career Guide Application for /admin queue
+export const SEED_GUIDE_APPLICATIONS: CareerGuideApplication[] = [
+  {
+    id: 'app-neha-k',
+    user_id: 'guide-neha-k',
+    full_name: 'Neha K.',
+    email: 'neha.k@gmail.com',
+    work_email: 'neha.kapoor@stripe.com',
+    work_email_verified: true,
+    city: 'Bengaluru',
+    gender: 'Female',
+    linkedin_url: 'https://linkedin.com/in/nehakapoor-pm',
+    linkedin_connected: true,
+    cv_file_name: 'Neha_Kapoor_CV.pdf',
+    cv_text:
+      'Neha Kapoor. Product Manager at Stripe (2023 - Present, 2 years). Previously Account Executive / B2B Sales at Freshworks (2019 - 2023, 4 years). Led self-serve onboarding and billing experiments.',
+    from_role: 'B2B Sales Account Executive',
+    from_field: 'Sales',
+    to_role: 'Product Manager',
+    years_in_earlier_role: 4,
+    years_in_current_role: 2,
+    years_since_move: 2,
+    how_long_it_took: '8 months of internal shadowing and evening side projects',
+    what_would_do_differently:
+      'Start interviewing earlier instead of waiting to complete 4 online certificates.',
+    story:
+      'Moved from B2B SaaS Sales (4 years) into Product Management (2 years ago). It took 8 months of internal product shadowing. If I did it again, I would talk to hiring managers much earlier.',
+    went_back: false,
+    commitment_confirmed: true,
+    checks: {
+      linkedin_connected: true,
+      email_verified: true,
+      move_found: true,
+      mismatch_flags: [],
+    },
+    status: 'under_review',
+    created_at: '2025-03-09T10:00:00Z',
+  },
+];
+
 // Bharat K.'s logged-in profile
 export const DEFAULT_BHARAT_SWITCHER: {
   profile: Profile;
@@ -675,6 +762,8 @@ export const DEFAULT_BHARAT_SWITCHER: {
     share_contact_with_pod: false,
     created_at: '2025-03-01T08:00:00Z',
     status: 'active',
+    objective: 'switch_role',
+    onboarding_completed: true,
   },
   move_profile: {
     user_id: 'user-bharat-k',
@@ -685,20 +774,23 @@ export const DEFAULT_BHARAT_SWITCHER: {
     years_experience: 6,
     months_since_leaving: null,
     dependants: 'None',
-    priority: 'Speed to role (Fastest transition)',
+    priority: 'Speed to role',
     availability: ['Weekday evenings (6:00 PM – 8:00 PM)', 'Weekend mornings (9:00 AM – 12:00 PM)'],
     constraints: ['Self-taught tech knowledge'],
     went_back: false,
     years_since_move: null,
-    story: 'Looking to transition existing operational problem-solving and cross-functional leadership into full-time product management.',
+    story:
+      'Looking to transition existing operational problem-solving and cross-functional leadership into full-time product management.',
     confirmed_at: '2025-03-01T08:30:00Z',
+    preferred_guide_gender: 'No preference',
   },
   goals: [
     {
       id: 'goal-b1',
       user_id: 'user-bharat-k',
       week_start: '2025-03-03',
-      text: 'Draft 3 target company product tear-downs',
+      week_number: 1,
+      text: 'Confirm the first Career Guide conversation',
       status: 'done',
       updated_at: '2025-03-06T15:00:00Z',
     },
@@ -706,7 +798,8 @@ export const DEFAULT_BHARAT_SWITCHER: {
       id: 'goal-b2',
       user_id: 'user-bharat-k',
       week_start: '2025-03-03',
-      text: 'Complete weekly 30-min guide kickoff call',
+      week_number: 1,
+      text: 'Set this week’s goals',
       status: 'partly',
       updated_at: '2025-03-07T11:00:00Z',
     },
@@ -714,13 +807,12 @@ export const DEFAULT_BHARAT_SWITCHER: {
       id: 'goal-b3',
       user_id: 'user-bharat-k',
       week_start: '2025-03-03',
-      text: 'Share initial sprint milestones with pod',
+      week_number: 1,
+      text: 'Introduce yourself to your pod',
       status: 'not_yet',
       updated_at: '2025-03-08T09:00:00Z',
     },
   ],
 };
 
-// Demo persona switcher (kept as reference for review)
 export const DEFAULT_DEMO_SWITCHER = DEFAULT_BHARAT_SWITCHER;
-

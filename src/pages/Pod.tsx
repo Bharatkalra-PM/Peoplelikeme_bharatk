@@ -2,23 +2,18 @@ import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { InitialsAvatar } from '../components/InitialsAvatar';
 import {
-  Users,
-  Video,
-  Clock,
   Heart,
   Send,
   MoreVertical,
-  ShieldAlert,
   Info,
-  Calendar,
   Sparkles,
-  MessageCircle,
+  Users,
+  CheckCircle2,
 } from 'lucide-react';
 
 export const Pod: React.FC = () => {
   const {
-    currentPod,
-    podMembers,
+    userPod,
     podPosts,
     addPodPost,
     toggleCheer,
@@ -27,6 +22,8 @@ export const Pod: React.FC = () => {
     sessions,
     reachOutPrompts,
     setReportModalUser,
+    simulatePodReady,
+    podReadyNotification,
   } = useApp();
 
   const [postBody, setPostBody] = useState('');
@@ -36,6 +33,9 @@ export const Pod: React.FC = () => {
   const [sentMessageToast, setSentMessageToast] = useState(false);
 
   const nextPodSession = sessions.find((s) => s.kind === 'pod_call') || sessions[1];
+  const membersCount = userPod ? userPod.members.length : 2;
+  const targetSize = userPod?.target_size || 4;
+  const isForming = membersCount < 4;
 
   const handlePostSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,7 +56,6 @@ export const Pod: React.FC = () => {
     }, 1500);
   };
 
-  // Find pod slip prompts (Section 3 rule: '[Name] hasn't posted this week' with 'Say hello', never reasons or labels)
   const inactivePrompts = reachOutPrompts.filter(
     (p) => p.audience === 'pod' && !p.resolved_at
   );
@@ -66,21 +65,61 @@ export const Pod: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-[#D3DDD8] dark:border-[#2A403C]">
         <div>
-          <h1 className="font-heading text-2xl sm:text-3xl font-normal text-[#13231F] dark:text-[#E6EEEA]">
-            {currentPod?.name || 'Your Pod'}
-          </h1>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="font-heading text-2xl sm:text-3xl font-normal text-[#13231F] dark:text-[#E6EEEA]">
+              {userPod?.name || 'Your Pod'}
+            </h1>
+            {userPod?.is_sample && (
+              <span className="text-[10px] font-semibold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[#2D6B8F]/15 text-[#2D6B8F] dark:text-[#89BBD6]">
+                Sample pod
+              </span>
+            )}
+          </div>
           <p className="text-xs sm:text-sm text-[#55665F] dark:text-[#A6B8B0] mt-0.5">
-            5 others making a similar career move at your stage
+            {isForming
+              ? `Your pod is forming. ${membersCount} of ${targetSize} have joined.`
+              : '4 to 6 people making a similar career move at the same stage'}
           </p>
         </div>
 
-        {/* Section 3 Correction 1 Continuity policy strictly in one place only */}
         <div className="max-w-xs text-[11px] text-[#55665F] dark:text-[#A6B8B0] p-2.5 rounded-xl bg-[#FFFFFF] dark:bg-[#0E1E1D] border border-[#D3DDD8] dark:border-[#2A403C] leading-tight">
           If your pod gets small, we'll add someone making the same move when we can, or offer to merge with another pod.
         </div>
       </div>
 
-      {/* Next Pod Session Card (Section 3 Corrections 4 & 5: 'Pod call', no duplicates, button label once) */}
+      {/* Pod Forming Card if < 4 members */}
+      {isForming && (
+        <div
+          data-testid="pod-page-forming-card"
+          className="bg-[#FFFFFF] dark:bg-[#0E1E1D] border border-[#F2B134]/60 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs"
+        >
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 text-xs font-semibold text-[#13231F] dark:text-[#E6EEEA]">
+              <Users className="w-4 h-4 text-[#8A5A00] dark:text-[#F2B134]" />
+              <span>Your pod is forming. {membersCount} of {targetSize} have joined.</span>
+            </div>
+            <p className="text-xs text-[#55665F] dark:text-[#A6B8B0]">
+              You start with your Career Guide alone while your pod fills to 4 members, and we will notify you when it is ready.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={simulatePodReady}
+            className="px-4 py-2 rounded-full bg-[#102A2E] dark:bg-[#F2B134] text-white dark:text-[#102A2E] text-xs font-medium shrink-0"
+          >
+            Simulate: Pod reaches 4 members
+          </button>
+        </div>
+      )}
+
+      {podReadyNotification && !isForming && (
+        <div className="p-4 rounded-xl bg-[#2F7D5B]/15 text-[#2F7D5B] dark:text-[#5FBF8F] text-xs font-medium flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4" />
+          <span>{podReadyNotification}</span>
+        </div>
+      )}
+
+      {/* Next Pod Session Card */}
       {nextPodSession && (
         <div className="bg-[#FFFFFF] dark:bg-[#0E1E1D] border border-[#D3DDD8] dark:border-[#2A403C] rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
           <div className="space-y-1.5">
@@ -103,17 +142,15 @@ export const Pod: React.FC = () => {
               Weekly 30-min Pod Call
             </h2>
 
-            {/* Optional Agenda (Section 3 Correction 8: optional, written by host, hidden when empty) */}
-            {currentPod?.agenda && (
+            {userPod?.agenda && (
               <p className="text-xs text-[#55665F] dark:text-[#A6B8B0] mt-1">
-                <span className="font-medium text-[#13231F] dark:text-[#E6EEEA]">Agenda:</span> {currentPod.agenda}
-                {currentPod.host_name && ` (Host: ${currentPod.host_name})`}
+                <span className="font-medium text-[#13231F] dark:text-[#E6EEEA]">Agenda:</span> {userPod.agenda}
+                {userPod.host_name && ` (Host: ${userPod.host_name})`}
               </p>
             )}
           </div>
 
           <div className="flex flex-col items-start sm:items-end gap-1 shrink-0">
-            {/* Disabled button label shows opening time once without duplication */}
             <button
               disabled
               className="px-5 py-2 rounded-full border border-[#D3DDD8] dark:border-[#2A403C] text-xs font-medium text-[#55665F] dark:text-[#A6B8B0] bg-[#F1F5F2]/50 dark:bg-[#122523]/50 cursor-not-allowed"
@@ -127,7 +164,7 @@ export const Pod: React.FC = () => {
         </div>
       )}
 
-      {/* Check In On Row (Section 3 & 6.5: shows only "[Name] hasn't posted this week" with "Say hello", never reasons or labels) */}
+      {/* Check In On Row */}
       {inactivePrompts.length > 0 && (
         <div className="space-y-2">
           {inactivePrompts.map((prompt) => (
@@ -157,7 +194,7 @@ export const Pod: React.FC = () => {
       {/* Pod Members Grid */}
       <section className="space-y-3">
         <h2 className="text-xs font-semibold uppercase tracking-wider text-[#55665F] dark:text-[#A6B8B0]">
-          Members ({podMembers.length + 1})
+          Members ({membersCount})
         </h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
@@ -171,7 +208,8 @@ export const Pod: React.FC = () => {
               />
               <div className="min-w-0">
                 <p className="text-xs font-semibold text-[#13231F] dark:text-[#E6EEEA] truncate">
-                  {currentUser?.first_name} {currentUser?.last_initial} <span className="font-normal text-[#55665F] dark:text-[#A6B8B0]">(You)</span>
+                  {currentUser?.first_name} {currentUser?.last_initial}{' '}
+                  <span className="font-normal text-[#55665F] dark:text-[#A6B8B0]">(You)</span>
                 </p>
                 <p className="text-[11px] text-[#55665F] dark:text-[#A6B8B0] truncate">
                   {currentMoveProfile?.from_role || 'Sales'} → {currentMoveProfile?.to_role || 'PM'}
@@ -181,44 +219,52 @@ export const Pod: React.FC = () => {
           </div>
 
           {/* Fellow members */}
-          {podMembers.map((member) => (
-            <div
-              key={member.user_id}
-              className="bg-[#FFFFFF] dark:bg-[#0E1E1D] border border-[#D3DDD8] dark:border-[#2A403C] rounded-xl p-3.5 flex items-center justify-between"
-            >
-              <div className="flex items-center gap-2.5 min-w-0">
-                <InitialsAvatar
-                  firstName={member.profile.first_name}
-                  lastInitial={member.profile.last_initial}
-                  size="md"
-                />
-                <div className="min-w-0">
-                  <p className="text-xs font-semibold text-[#13231F] dark:text-[#E6EEEA] truncate">
-                    {member.profile.first_name} {member.profile.last_initial}
-                  </p>
-                  <p className="text-[11px] text-[#55665F] dark:text-[#A6B8B0] truncate">
-                    {member.move_line}
-                  </p>
-                </div>
-              </div>
-
-              {/* Report button */}
-              <button
-                type="button"
-                onClick={() =>
-                  setReportModalUser({
-                    id: member.user_id,
-                    name: `${member.profile.first_name} ${member.profile.last_initial}`,
-                  })
-                }
-                className="p-1 text-[#55665F] dark:text-[#A6B8B0] hover:text-[#A8432C] dark:hover:text-[#E58C73]"
-                title="Report concern"
-                aria-label={`Report concern regarding ${member.profile.first_name} ${member.profile.last_initial}`}
+          {userPod?.members
+            .filter((m) => m.user_id !== currentUser?.id)
+            .map((member) => (
+              <div
+                key={member.user_id}
+                className="bg-[#FFFFFF] dark:bg-[#0E1E1D] border border-[#D3DDD8] dark:border-[#2A403C] rounded-xl p-3.5 flex items-center justify-between"
               >
-                <MoreVertical className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          ))}
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <InitialsAvatar
+                    firstName={member.profile.first_name}
+                    lastInitial={member.profile.last_initial}
+                    size="md"
+                  />
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-xs font-semibold text-[#13231F] dark:text-[#E6EEEA] truncate">
+                        {member.profile.first_name} {member.profile.last_initial}
+                      </p>
+                      {member.profile.is_sample && (
+                        <span className="text-[9px] font-semibold uppercase px-1.5 py-0.5 rounded-full bg-[#2D6B8F]/15 text-[#2D6B8F] dark:text-[#89BBD6]">
+                          Sample profile
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-[#55665F] dark:text-[#A6B8B0] truncate">
+                      {member.move_line}
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setReportModalUser({
+                      id: member.user_id,
+                      name: `${member.profile.first_name} ${member.profile.last_initial}`,
+                    })
+                  }
+                  className="p-1 text-[#55665F] dark:text-[#A6B8B0] hover:text-[#A8432C] dark:hover:text-[#E58C73]"
+                  title="Report concern"
+                  aria-label={`Report concern regarding ${member.profile.first_name} ${member.profile.last_initial}`}
+                >
+                  <MoreVertical className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ))}
         </div>
       </section>
 
@@ -228,11 +274,10 @@ export const Pod: React.FC = () => {
           Updates & Wins
         </h2>
 
-        {/* Section 3 Correction 6: Show pod note fully ABOVE composer without truncation */}
         <div className="p-3.5 rounded-xl bg-[#F1F5F2] dark:bg-[#122523] border border-[#D3DDD8]/70 dark:border-[#2A403C] text-xs text-[#55665F] dark:text-[#A6B8B0] flex items-start gap-2.5">
           <Info className="w-4 h-4 shrink-0 text-[#2D6B8F] dark:text-[#7FB6D6] mt-0.5" />
           <p className="leading-relaxed">
-            This space is private to your 6-person pod. Share small wins, roadblocks, or honest weekly check-ins.
+            This space is private to your pod. Share small wins, roadblocks, or honest weekly check-ins.
             No automated messages are ever sent on anyone's behalf.
           </p>
         </div>
@@ -272,7 +317,6 @@ export const Pod: React.FC = () => {
         {/* Feed Posts */}
         <div className="space-y-3">
           {podPosts.length === 0 ? (
-            /* Section 10 Empty state */
             <div className="bg-[#FFFFFF] dark:bg-[#0E1E1D] border border-[#D3DDD8] dark:border-[#2A403C] rounded-2xl p-8 text-center space-y-2">
               <p className="text-sm font-medium text-[#13231F] dark:text-[#E6EEEA]">No updates yet.</p>
               <p className="text-xs text-[#55665F] dark:text-[#A6B8B0]">

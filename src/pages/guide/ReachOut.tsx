@@ -37,7 +37,7 @@ export const ReachOut: React.FC = () => {
           className="text-xs text-[#55665F] dark:text-[#A6B8B0] hover:text-[#13231F] dark:hover:text-[#E6EEEA] flex items-center gap-1.5"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
-          <span>Back to guide hub</span>
+          <span>Back to Career Guide hub</span>
         </Link>
         <span className="text-xs font-medium text-[#55665F] dark:text-[#A6B8B0]">
           Personal Reach Out
@@ -85,7 +85,7 @@ export const ReachOut: React.FC = () => {
               Message sent to {prompt?.subject_name || 'Priya'}
             </p>
             <p className="text-xs text-[#55665F] dark:text-[#A6B8B0]">
-              Returning to your guide dashboard...
+              Returning to your Career Guide dashboard...
             </p>
           </div>
         ) : (

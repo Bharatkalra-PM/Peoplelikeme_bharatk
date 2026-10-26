@@ -28,7 +28,7 @@ export const RhythmSetup: React.FC = () => {
     const guideSession = sessions.find((s) => s.kind === 'guide') || sessions[0];
     const icsText = generateIcsContent({
       title: guideSession.title,
-      description: 'Weekly 30-minute guide conversation on People Like Me',
+      description: 'Weekly 30-minute Career Guide conversation on People Like Me',
       startsAt: guideSession.starts_at,
       durationMin: guideSession.duration_min,
       videoUrl: guideSession.video_url,
@@ -58,7 +58,7 @@ export const RhythmSetup: React.FC = () => {
             Set your weekly rhythm
           </h1>
           <p className="text-sm text-[#55665F] dark:text-[#A6B8B0]">
-            Confirm your weekly guide slot and pod session times. You can reschedule any session up to 2 hours before.
+            Confirm your weekly Career Guide slot and pod session times. You can reschedule any session up to 2 hours before.
           </p>
         </div>
 
@@ -68,10 +68,10 @@ export const RhythmSetup: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-sm font-semibold text-[#13231F] dark:text-[#E6EEEA]">
-                  Weekly Guide Conversation (30 min)
+                  Weekly Career Guide Conversation (30 min)
                 </h2>
                 <p className="text-xs text-[#55665F] dark:text-[#A6B8B0]">
-                  One-on-one session with your guide
+                  One-on-one session with your Career Guide
                 </p>
               </div>
               <span className="text-xs px-2.5 py-1 rounded-full bg-[#F2B134]/15 text-[#8A5A00] dark:text-[#F2B134] font-medium">

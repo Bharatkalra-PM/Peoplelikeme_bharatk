@@ -1,5 +1,11 @@
 export type UserRole = 'switcher' | 'guide' | 'admin';
 
+export type ObjectiveType = 'switch_role' | 'restart_break' | 'become_guide';
+
+export type GenderOption = 'No preference' | 'Female' | 'Male' | 'Non-binary';
+
+export type ApplicationStatus = 'under_review' | 'approved' | 'needs_more' | 'rejected';
+
 export interface Profile {
   id: string;
   role: UserRole;
@@ -12,12 +18,26 @@ export interface Profile {
   share_contact_with_guide: boolean;
   share_contact_with_pod: boolean;
   created_at: string;
-  status?: 'active' | 'paused' | 'pending_approval';
+  status?: 'active' | 'paused' | 'pending_approval' | 'rejected' | 'needs_more';
   linkedin_url?: string;
   verified?: boolean;
+  gender?: 'Female' | 'Male' | 'Non-binary';
+  is_sample?: boolean;
+  objective?: ObjectiveType;
+  onboarding_completed?: boolean;
+  rating_avg?: number;
+  ratings_count?: number;
+  guided_count?: number;
+  application_status?: ApplicationStatus;
 }
 
-export type PromptKey = 'coming_from' | 'going_to' | 'pushing_change' | 'tried_so_far' | 'holding_back' | 'story';
+export type PromptKey =
+  | 'coming_from'
+  | 'going_to'
+  | 'pushing_change'
+  | 'tried_so_far'
+  | 'holding_back'
+  | 'story';
 
 export interface StoryAnswer {
   id: string;
@@ -36,14 +56,16 @@ export interface MoveProfile {
   to_role: string;
   years_experience: number;
   months_since_leaving: number | null;
-  dependants: string; // 'None' | 'Children' | 'Elderly parents' | 'Partner' | etc.
-  priority: string;   // 'Speed to role' | 'Target salary' | 'Domain fit' | 'Work-life balance'
-  availability: string[]; // e.g. ['Weekday evenings', 'Weekend mornings']
-  constraints: string[];  // e.g. ['Caregiving duties', 'Notice period: 60 days', 'Restricted location']
-  went_back: boolean;     // e.g. true for 'Retail sales → Associate PM → back to sales'
+  dependants: string;
+  priority: string;
+  availability: string[];
+  constraints: string[];
+  went_back: boolean;
   years_since_move: number | null;
   story: string | null;
   confirmed_at: string | null;
+  preferred_guide_gender?: GenderOption;
+  already_done?: string[];
 }
 
 export type GuideRequestStatus = 'pending' | 'accepted' | 'declined' | 'expired';
@@ -73,6 +95,7 @@ export interface Pod {
   checkin_slot?: string;
   agenda?: string;
   host_name?: string;
+  is_sample?: boolean;
 }
 
 export interface PodMember {
@@ -80,7 +103,10 @@ export interface PodMember {
   user_id: string;
   joined_at: string;
   left_at?: string | null;
-  profile: Pick<Profile, 'id' | 'first_name' | 'last_initial' | 'city' | 'avatar_color' | 'share_contact_with_pod'> & { email?: string };
+  profile: Pick<
+    Profile,
+    'id' | 'first_name' | 'last_initial' | 'city' | 'avatar_color' | 'share_contact_with_pod' | 'is_sample'
+  > & { email?: string };
   move_line: string;
   last_posted_at?: string;
 }
@@ -99,6 +125,69 @@ export interface Rhythm {
   guide_slot?: string;
 }
 
+export interface Milestone {
+  id: string;
+  week: number; // 1 to 8
+  title: string;
+  description?: string;
+  completed?: boolean;
+}
+
+export interface SprintPlan {
+  id: string;
+  switcher_id: string;
+  guide_id: string;
+  status: 'draft' | 'finalised';
+  milestones: Milestone[];
+  suggested_goals: Record<number, string[]>;
+  updated_at: string;
+}
+
+export interface ConversationRating {
+  id: string;
+  session_id: string;
+  switcher_id: string;
+  guide_id: string;
+  helpful_score: number; // 1 to 5
+  move_match_score: number; // 1 to 5
+  created_at: string;
+}
+
+export interface CareerGuideApplication {
+  id: string;
+  user_id: string;
+  full_name: string;
+  email: string;
+  work_email: string;
+  work_email_verified: boolean;
+  city: string;
+  gender?: 'Female' | 'Male' | 'Non-binary';
+  linkedin_url: string;
+  linkedin_connected: boolean;
+  cv_file_name: string;
+  cv_text: string;
+  from_role: string;
+  from_field: string;
+  to_role: string;
+  years_in_earlier_role: number;
+  years_in_current_role: number;
+  years_since_move: number;
+  how_long_it_took: string;
+  what_would_do_differently: string;
+  story: string;
+  went_back: boolean;
+  commitment_confirmed: boolean;
+  checks: {
+    linkedin_connected: boolean;
+    email_verified: boolean;
+    move_found: boolean;
+    mismatch_flags: string[];
+  };
+  status: ApplicationStatus;
+  admin_note?: string;
+  created_at: string;
+}
+
 export type SessionKind = 'guide' | 'pod_call' | 'pod_checkin';
 
 export interface Session {
@@ -113,6 +202,7 @@ export interface Session {
   held: boolean | null;
   title: string;
   with_name?: string;
+  rated?: boolean;
 }
 
 export type GoalStatus = 'not_yet' | 'partly' | 'done';
@@ -121,8 +211,10 @@ export interface Goal {
   id: string;
   user_id: string;
   week_start: string; // YYYY-MM-DD
+  week_number?: number;
   text: string;
   status: GoalStatus;
+  suggested_by_guide?: boolean;
   updated_at: string;
 }
 
