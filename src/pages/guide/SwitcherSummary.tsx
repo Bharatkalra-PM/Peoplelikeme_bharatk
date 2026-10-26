@@ -21,6 +21,7 @@ import {
 
 export const SwitcherSummary: React.FC = () => {
   const {
+    currentUser,
     currentMoveProfile,
     goals,
     suggestedGoals,
@@ -90,10 +91,10 @@ export const SwitcherSummary: React.FC = () => {
         {/* Switcher header */}
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-3">
-            <InitialsAvatar firstName="Bharat" lastInitial="K." size="lg" />
+            <InitialsAvatar firstName={currentUser?.role === "switcher" ? currentUser.first_name : "Bharat"} lastInitial={currentUser?.role === "switcher" ? currentUser.last_initial : "K."} size="lg" />
             <div>
               <h1 className="text-lg font-semibold text-[#13231F] dark:text-[#E6EEEA]">
-                Bharat K.
+                {currentUser?.role === 'switcher' ? currentUser.full_name : 'Bharat K.'}
               </h1>
               <p className="text-xs text-[#55665F] dark:text-[#A6B8B0] flex items-center gap-1 mt-0.5">
                 <MapPin className="w-3 h-3" />
@@ -404,4 +405,5 @@ export const SwitcherSummary: React.FC = () => {
     </div>
   );
 };
+
 

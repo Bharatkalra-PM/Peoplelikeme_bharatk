@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+﻿import React, { createContext, useContext, useEffect, useState } from 'react';
 import {
   CareerGuideApplication,
   ConversationRating,
@@ -211,7 +211,7 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'plm_app_state_v2';
+const STORAGE_KEY = 'plm_app_state_v4';
 
 function loadSavedState<T>(key: string, fallback: T): T {
   try {
@@ -280,8 +280,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       dependants: 'None',
       priority: 'Speed to role',
       availability: [
-        'Weekday evenings (6:00 PM – 8:00 PM)',
-        'Weekend mornings (9:00 AM – 12:00 PM)',
+        'Weekday evenings (6:00 PM â€“ 8:00 PM)',
+        'Weekend mornings (9:00 AM â€“ 12:00 PM)',
       ],
       city: 'Bengaluru',
       constraints: ['Self-taught tech knowledge'],
@@ -345,8 +345,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       {
         id: 'gmsg-1',
         sender: 'guide',
-        senderName: 'Arjun K.',
-        text: 'Hi! Excited to be your Career Guide for this 8-week sprint. I have reviewed your story and drafted 5 milestones for us. Let’s review them in our first 30-min call!',
+        senderName: 'Arjun K.', sender_name: 'Arjun K.',
+        text: 'Hi! Excited to be your Career Guide for this 8-week sprint. I have reviewed your story and drafted 5 milestones for us. Letâ€™s review them in our first 30-min call!',
         createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
       },
     ])
@@ -357,7 +357,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const switcherMsg = {
       id: `gmsg-${Date.now()}`,
       sender: 'switcher' as const,
-      senderName: currentUser?.first_name || 'You',
+      senderName: currentUser?.first_name || 'You', sender_name: currentUser?.first_name || 'You',
       text: text.trim(),
       createdAt: new Date().toISOString(),
     };
@@ -368,7 +368,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const autoReply = {
       id: `gmsg-${Date.now() + 1}`,
       sender: 'guide' as const,
-      senderName: guideName,
+      senderName: guideName, sender_name: guideName,
       text: `Thanks for sharing that! I've noted it for our 1:1 session and updated your Week ${
         currentRhythm?.week || 1
       } focus areas.`,
@@ -395,7 +395,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       start_date: new Date().toISOString().split('T')[0],
       week: 1,
       status: 'active',
-      guide_slot: 'Wednesdays 6:30 PM (6:00 PM – 8:00 PM)',
+      guide_slot: 'Wednesdays 6:30 PM (6:00 PM â€“ 8:00 PM)',
     })
   );
 
@@ -409,7 +409,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       suggested_goals: {
         1: [
           'Confirm the first Career Guide conversation',
-          'Set this week’s goals',
+          'Set this weekâ€™s goals',
           'Introduce yourself to your pod',
         ],
       },
@@ -621,7 +621,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         months_since_leaving: null,
         dependants: detailChips.dependants || 'None',
         priority: detailChips.priority || 'Speed to role',
-        availability: detailChips.availability || ['Weekday evenings (6:00 PM – 8:00 PM)'],
+        availability: detailChips.availability || ['Weekday evenings (6:00 PM â€“ 8:00 PM)'],
         constraints: detailChips.constraints || [],
         went_back: false,
         years_since_move: null,
@@ -742,7 +742,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // Week 1 always includes: confirm the first Career Guide conversation, set this week's goals, and introduce yourself to your pod
     const week1Goals = [
       'Confirm the first Career Guide conversation',
-      'Set this week’s goals',
+      'Set this weekâ€™s goals',
       'Introduce yourself to your pod',
     ];
 
@@ -912,7 +912,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           avatar_color: '#2D6B8F',
           share_contact_with_pod: true,
         },
-        move_line: 'B2B Sales → Product Manager',
+        move_line: 'B2B Sales â†’ Product Manager',
       },
       {
         pod_id: baseKey,
@@ -926,7 +926,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           avatar_color: '#8A5A00',
           share_contact_with_pod: false,
         },
-        move_line: 'Account Management → Product Manager',
+        move_line: 'Account Management â†’ Product Manager',
       },
     ];
 
@@ -1131,7 +1131,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
     setConversationRatings((prev) => [newRating, ...prev]);
     setSessions((prev) =>
-      prev.map((s) => (s.id === sessionId ? { ...s, held: true, rated: true } : s))
+      prev.map((s) => (s.id === sessionIdOrGuideId ? { ...s, held: true, rated: true } : s))
     );
 
     const avgSessionScore = (helpfulScore + moveMatchScore) / 2;
@@ -1636,8 +1636,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           dependants: 'None',
           priority: 'Speed to role',
           availability: [
-            'Weekday evenings (6:00 PM – 8:00 PM)',
-            'Weekend mornings (9:00 AM – 12:00 PM)',
+            'Weekday evenings (6:00 PM â€“ 8:00 PM)',
+            'Weekend mornings (9:00 AM â€“ 12:00 PM)',
           ],
           constraints: [],
           went_back: app.went_back,
@@ -1894,3 +1894,4 @@ export const useApp = () => {
   if (!context) throw new Error('useApp must be used within an AppProvider');
   return context;
 };
+

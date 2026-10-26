@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { BrandMark } from '../components/BrandMark';
@@ -23,7 +23,7 @@ export const Guides: React.FC = () => {
     rematchReasonNote,
     currentMoveProfile,
     currentUser,
-    updateMatchingParameters,
+    updateMatchingParameters, sendGuideRequest, acceptGuideRequest,
   } = useApp();
   const navigate = useNavigate();
   const [notified, setNotified] = useState(false);
@@ -164,7 +164,7 @@ export const Guides: React.FC = () => {
                 className="w-full sm:w-auto px-6 py-2.5 rounded-full bg-[#102A2E] dark:bg-[#F2B134] text-white dark:text-[#102A2E] text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer"
               >
                 <Bell className="w-3.5 h-3.5" />
-                <span>{notified ? '✓ We will notify you' : 'Notify me'}</span>
+                <span>{notified ? 'âœ“ We will notify you' : 'Notify me'}</span>
               </button>
 
               <button
@@ -236,13 +236,13 @@ export const Guides: React.FC = () => {
                           <span>{(guide.rating_avg ?? 4.9).toFixed(1)}</span>
                         </span>
                       )}
-                      <span>·</span>
+                      <span>Â·</span>
                       <span>
                         Guided {guidedCount} {guidedCount === 1 ? 'person' : 'people'}
                       </span>
                     </div>
 
-                    {/* Move Line ("Sales, consumer goods → Product manager · 2 years ago") */}
+                    {/* Move Line ("Sales, consumer goods â†’ Product manager Â· 2 years ago") */}
                     <div className="space-y-1">
                       <span className="text-[10px] uppercase font-semibold text-[#55665F] dark:text-[#A6B8B0] tracking-wider">
                         Career Move
@@ -448,3 +448,4 @@ export const Guides: React.FC = () => {
     </div>
   );
 };
+
