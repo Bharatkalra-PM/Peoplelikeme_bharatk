@@ -1374,15 +1374,51 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return JSON.stringify(exportObject, null, 2);
   };
 
-  // Auth / Login (distinguishes new user vs returning user)
+  // Persist per-user state in localStorage so any user who signs up or logs in has their own data stored
+  useEffect(() => {
+    if (!currentUser?.email) return;
+    try {
+      const cleanEmail = currentUser.email.trim().toLowerCase();
+      const allUsersRaw = localStorage.getItem('plm_users_data_v1');
+      const allUsers: Record<string, any> = allUsersRaw ? JSON.parse(allUsersRaw) : {};
+      allUsers[cleanEmail] = {
+        profile: currentUser,
+        moveProfile: currentMoveProfile,
+        storyAnswers,
+        backgroundInfo,
+        detailChips,
+        draftedProfile,
+        currentRhythm,
+        sprintPlan,
+        goals,
+        guideRequests,
+        updatedAt: new Date().toISOString(),
+      };
+      localStorage.setItem('plm_users_data_v1', JSON.stringify(allUsers));
+    } catch {
+      // ignore storage errors
+    }
+  }, [
+    currentUser,
+    currentMoveProfile,
+    storyAnswers,
+    backgroundInfo,
+    detailChips,
+    draftedProfile,
+    currentRhythm,
+    sprintPlan,
+    goals,
+    guideRequests,
+  ]);
+
+  // Auth / Login (stores and restores data per email so anyone can create an account or sign in)
   const login = (
     email: string,
     role: 'switcher' | 'guide' | 'admin',
-    name = 'Varun S.',
+    name = 'User',
     isNewUser?: boolean
   ): { isReturning: boolean; targetRoute: string } => {
     const cleanEmail = email.trim().toLowerCase();
-    // Returning user check: Bharat's email or admin or existing guide
     const existingGuide = guidesList.find(
       (g) => g.profile.email.toLowerCase() === cleanEmail
     );
@@ -1417,23 +1453,83 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (isReturningBharat) {
       setCurrentUser(DEFAULT_DEMO_SWITCHER.profile);
       setCurrentMoveProfile(DEFAULT_DEMO_SWITCHER.move_profile);
+      setDetailChips({
+        from_role: 'B2B Sales Lead',
+        from_field: 'Sales',
+        to_role: 'Product Manager',
+        years_experience: 5,
+        dependants: 'None',
+        priority: 'Speed to role',
+        availability: [
+          'Weekday evenings (6:00 PM – 8:00 PM)',
+          'Weekend mornings (9:00 AM – 12:00 PM)',
+        ],
+        city: 'Bengaluru',
+        constraints: ['Self-taught tech knowledge'],
+        preferred_guide_gender: 'No preference',
+      });
       return { isReturning: true, targetRoute: '/home' };
     }
 
-    // Brand new user journey (e.g. Varun) -> goes to Step 2 (/onboarding/objective)
+    // Check if this user already has saved account data in localStorage (and isn't forcing a fresh reset)
+    if (!isNewUser && cleanEmail !== 'varunk6325@gmail.com') {
+      try {
+        const allUsersRaw = localStorage.getItem('plm_users_data_v1');
+        const allUsers: Record<string, any> = allUsersRaw ? JSON.parse(allUsersRaw) : {};
+        const savedUser = allUsers[cleanEmail];
+        if (savedUser && savedUser.profile) {
+          setCurrentUser(savedUser.profile);
+          setCurrentMoveProfile(savedUser.moveProfile || null);
+          setStoryAnswers(savedUser.storyAnswers || {});
+          setBackgroundInfo(
+            savedUser.backgroundInfo || {
+              cvText: '',
+              linkedInText: '',
+              cvFileName: '',
+              manualRole: '',
+              manualIndustry: '',
+              manualYears: '',
+              manualSummary: '',
+            }
+          );
+          if (savedUser.detailChips) setDetailChips(savedUser.detailChips);
+          setDraftedProfile(savedUser.draftedProfile || null);
+          setCurrentRhythm(savedUser.currentRhythm || null);
+          setSprintPlan(savedUser.sprintPlan || null);
+          setGoals(savedUser.goals || []);
+          setGuideRequests(savedUser.guideRequests || []);
+          const completed = Boolean(
+            savedUser.profile.onboarding_completed || savedUser.moveProfile
+          );
+          return {
+            isReturning: completed,
+            targetRoute:
+              savedUser.profile.role === 'guide'
+                ? '/guide-home'
+                : completed
+                ? '/home'
+                : '/onboarding/objective',
+          };
+        }
+      } catch {
+        // ignore storage errors
+      }
+    }
+
+    // Brand new user journey -> clean slate with zero prefilled Bharat data
     const names = name.trim().split(/\s+/);
-    const first = names[0] || 'Varun';
+    const first = names[0] || 'User';
     const lastInit =
       names.length > 1 && names[1]
         ? names[1][0].toUpperCase() + '.'
-        : 'S.';
+        : '';
 
     const newUser: Profile = {
       id: `user-${Date.now()}`,
       role,
       first_name: first,
       last_initial: lastInit,
-      full_name: `${first} ${lastInit}`,
+      full_name: lastInit ? `${first} ${lastInit}` : first,
       email: cleanEmail,
       city: 'Bengaluru',
       avatar_color: '#102A2E',
@@ -1445,6 +1541,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       onboarding_completed: false,
     };
 
+    const emptyChips: DetailChipsState = {
+      from_role: '',
+      from_field: '',
+      to_role: '',
+      years_experience: 3,
+      dependants: 'None',
+      priority: 'Speed to role',
+      availability: ['Weekday evenings (6:00 PM – 8:00 PM)'],
+      city: 'Bengaluru',
+      constraints: [],
+      preferred_guide_gender: 'No preference',
+    };
+
+    const emptyBg = {
+      cvText: '',
+      linkedInText: '',
+      cvFileName: '',
+      manualRole: '',
+      manualIndustry: '',
+      manualYears: '',
+      manualSummary: '',
+    };
+
     setCurrentUser(newUser);
     setCurrentMoveProfile(null);
     setDraftedProfile(null);
@@ -1454,6 +1573,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setDeclinedGuideIds([]);
     setRematchOffered(false);
     setStoryAnswers({});
+    setBackgroundInfo(emptyBg);
+    setDetailChips(emptyChips);
     setGoals([]);
 
     return {

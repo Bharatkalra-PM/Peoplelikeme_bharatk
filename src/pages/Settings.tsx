@@ -59,13 +59,7 @@ export const Settings: React.FC = () => {
             Privacy by default. You control exactly who sees your contact details.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => setShowApiKeysModal(true)}
-          className="px-3 py-1.5 rounded-full border border-[#D3DDD8] dark:border-[#2A403C] hover:bg-[#FFFFFF] dark:hover:bg-[#0E1E1D] text-xs font-medium flex items-center gap-1.5"
-        >
-          <span>APIs & Keys</span>
-        </button>
+        
       </div>
 
       <ApiKeysInfoModal isOpen={showApiKeysModal} onClose={() => setShowApiKeysModal(false)} />

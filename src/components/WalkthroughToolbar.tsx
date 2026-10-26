@@ -1,9 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import {
-  Clock,
-  FastForward,
-  HeartHandshake,
   Moon,
   RotateCcw,
   Sun,
@@ -15,15 +12,12 @@ import {
   ArrowRight,
   KeyRound,
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 export const WalkthroughToolbar: React.FC = () => {
   const {
     currentUser,
     switchUser,
-    simulate48HourExpiry,
-    simulateSlip,
-    simulateWeekAdvance,
     resetAllData,
     theme,
     toggleTheme,
@@ -34,8 +28,14 @@ export const WalkthroughToolbar: React.FC = () => {
     setDemoToast,
   } = useApp();
   const navigate = useNavigate();
+  const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
   const [showPersonaDropdown, setShowPersonaDropdown] = useState(false);
+
+  // Do not show the top bar on the main landing page, sign-in/sign-up page, or when logged out
+  if (!currentUser || location.pathname === '/' || location.pathname === '/signup') {
+    return null;
+  }
 
   const handleToggleDemoMode = () => {
     const next = !demoMode;
@@ -50,40 +50,9 @@ export const WalkthroughToolbar: React.FC = () => {
     });
   };
 
-  const handle48hRematch = () => {
-    simulate48HourExpiry();
-    navigate('/guides');
-  };
-
-  const handleSimulateSlip = () => {
-    simulateSlip();
-    navigate('/guide-home/reach-out/prompt-demo-slip');
-  };
-
-  const handleAdvanceWeek = () => {
-    const nextWk = currentRhythm ? Math.min(8, currentRhythm.week + 1) : 2;
-    simulateWeekAdvance();
-    if (nextWk === 8) {
-      navigate('/wrap-up');
-    } else {
-      navigate('/home');
-    }
-  };
-
-  const handleReset = () => {
-    resetAllData();
-    setDemoToast({
-      title: 'Demo Data Reset',
-      message: 'All state has been reset to Week 1 of 8 for Bharat K. (bharatk6325@gmail.com).',
-      linkTo: '/home',
-      linkLabel: 'Go to Home',
-    });
-    navigate('/home');
-  };
-
   return (
     <aside
-      aria-label="Walkthrough Testing Bar"
+      aria-label="Account & Theme Bar"
       className="bg-[#102A2E] text-[#E6EEEA] border-b border-[#2A403C] text-xs sticky top-0 z-40 shadow-sm"
     >
       <div className="max-w-7xl mx-auto px-3 py-1.5 flex items-center justify-between gap-2 flex-wrap">
@@ -91,9 +60,7 @@ export const WalkthroughToolbar: React.FC = () => {
           <div className="flex items-center gap-1.5 bg-[#0B1D20] px-2.5 py-1 rounded-full border border-[#2A403C]">
             <User className="w-3.5 h-3.5 text-[#F2B134]" />
             <span className="text-[11px] font-medium text-white">
-              {currentUser
-                ? `${currentUser.first_name} ${currentUser.last_initial} (${currentUser.email})`
-                : 'Logged Out'}
+              {`${currentUser.first_name} ${currentUser.last_initial} (${currentUser.email})`}
             </span>
             {currentRhythm && (
               <span className="text-[10px] text-[#F2B134] font-semibold ml-1 border-l border-[#2A403C] pl-1.5">
@@ -115,20 +82,20 @@ export const WalkthroughToolbar: React.FC = () => {
                     ? 'bg-[#F2B134]/20 border-[#F2B134] text-[#F2B134] font-semibold'
                     : 'bg-[#0B1D20] hover:bg-[#122523] border-[#2A403C] text-[#A6B8B0] hover:text-white'
                 }`}
-                title="Toggle DEMO_MODE (12 sample Career Guides & 2 sample pods)"
+                title="Toggle sample Career Guides & pods"
               >
                 <FlaskConical className="w-3 h-3" />
-                <span>Demo Mode: {demoMode ? 'ON' : 'OFF'}</span>
+                <span>Sample Guides: {demoMode ? 'ON' : 'OFF'}</span>
               </button>
 
-              {/* Test Personas Dropdown */}
+              {/* Switch Account Dropdown */}
               <div className="relative">
                 <button
                   type="button"
                   onClick={() => setShowPersonaDropdown(!showPersonaDropdown)}
                   className="px-2.5 py-1 rounded-full bg-[#0B1D20] hover:bg-[#122523] border border-[#2A403C] text-[11px] text-[#E6EEEA] hover:text-white flex items-center gap-1 transition-colors cursor-pointer"
                 >
-                  <span>Switch Role / Demo Login</span>
+                  <span>Switch Account</span>
                   <ChevronDown className="w-3 h-3" />
                 </button>
 
@@ -139,10 +106,6 @@ export const WalkthroughToolbar: React.FC = () => {
                       onClick={() => {
                         switchUser('switcher_priya');
                         setShowPersonaDropdown(false);
-                        setDemoToast({
-                          title: 'Switched to Bharat K. (bharatk6325@gmail.com)',
-                          message: 'Viewing active Week 1 of 8 dashboard matched with Career Guide Arjun K.',
-                        });
                         navigate('/home');
                       }}
                       className="w-full text-left px-2.5 py-2 rounded-lg text-[11px] hover:bg-[#122523] text-white flex items-center justify-between cursor-pointer"
@@ -159,16 +122,12 @@ export const WalkthroughToolbar: React.FC = () => {
                       onClick={() => {
                         switchUser('new_switcher');
                         setShowPersonaDropdown(false);
-                        setDemoToast({
-                          title: 'Switched to Varun K. (varunk6325@gmail.com)',
-                          message: 'Starting fresh user onboarding from Step 2 (Objective -> Story -> Matching).',
-                        });
                         navigate('/onboarding/objective');
                       }}
                       className="w-full text-left px-2.5 py-2 rounded-lg text-[11px] hover:bg-[#122523] text-[#E6EEEA] hover:text-white cursor-pointer"
                     >
                       <p className="font-semibold">Varun K. (varunk6325@gmail.com)</p>
-                      <p className="text-[10px] text-[#A6B8B0]">New Switcher • Full Onboarding Flow</p>
+                      <p className="text-[10px] text-[#A6B8B0]">New Switcher • Fresh Onboarding</p>
                     </button>
 
                     <button
@@ -176,16 +135,12 @@ export const WalkthroughToolbar: React.FC = () => {
                       onClick={() => {
                         switchUser('guide_arjun');
                         setShowPersonaDropdown(false);
-                        setDemoToast({
-                          title: 'Switched to Career Guide View (Arjun K.)',
-                          message: 'Accept incoming switcher requests or click "Active Switchers" to edit & finalise the 8-week plan.',
-                        });
                         navigate('/guide-home');
                       }}
                       className="w-full text-left px-2.5 py-2 rounded-lg text-[11px] hover:bg-[#122523] text-[#E6EEEA] hover:text-white cursor-pointer"
                     >
                       <p className="font-semibold">Arjun K. (Career Guide View)</p>
-                      <p className="text-[10px] text-[#A6B8B0]">Accept requests & edit 8-week milestone plan</p>
+                      <p className="text-[10px] text-[#A6B8B0]">Accept requests & edit 8-week plan</p>
                     </button>
 
                     <button
@@ -193,16 +148,12 @@ export const WalkthroughToolbar: React.FC = () => {
                       onClick={() => {
                         switchUser('admin');
                         setShowPersonaDropdown(false);
-                        setDemoToast({
-                          title: 'Switched to Admin View',
-                          message: 'Review and approve Career Guide applications with LinkedIn, Email & CV checks.',
-                        });
                         navigate('/admin');
                       }}
                       className="w-full text-left px-2.5 py-2 rounded-lg text-[11px] hover:bg-[#122523] text-[#E6EEEA] hover:text-white cursor-pointer"
                     >
                       <p className="font-semibold">Admin (Approvals & Moderation)</p>
-                      <p className="text-[10px] text-[#A6B8B0]">Approve / Reject / Ask for more on applications</p>
+                      <p className="text-[10px] text-[#A6B8B0]">Review Career Guide applications</p>
                     </button>
 
                     <div className="border-t border-[#2A403C] pt-1 mt-1">
@@ -215,47 +166,21 @@ export const WalkthroughToolbar: React.FC = () => {
                         className="w-full text-left px-2.5 py-1.5 rounded-lg text-[11px] hover:bg-[#122523] text-[#F2B134] flex items-center gap-1.5 cursor-pointer"
                       >
                         <KeyRound className="w-3 h-3" />
-                        <span>Open Sign-In Page (View Demo Passwords)</span>
+                        <span>Sign In / Create Another Account</span>
                       </button>
                     </div>
                   </div>
                 )}
               </div>
 
-              {/* Simulation triggers */}
-              <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => {
-                    simulate48HourExpiry();
-                    navigate('/guides');
-                  }}
-                  className="px-2.5 py-1 rounded bg-[#0B1D20] hover:bg-[#193d43] border border-[#2A403C] text-[11px] flex items-center gap-1 text-[#E58C73] hover:text-white transition-colors cursor-pointer"
-                  title="Simulate 48-Hour guide expiration to see automatic rematch state"
-                >
-                  <Clock className="w-3 h-3" />
-                  <span>Simulate 48h Rematch</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={simulateWeekAdvance}
-                  className="px-2.5 py-1 rounded bg-[#0B1D20] hover:bg-[#193d43] border border-[#2A403C] text-[11px] flex items-center gap-1 text-[#5FBF8F] hover:text-white transition-colors cursor-pointer"
-                  title="Advance current sprint by 1 week"
-                >
-                  <FastForward className="w-3 h-3" />
-                  <span>+1 Wk</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={resetAllData}
-                  className="p-1.5 rounded bg-[#0B1D20] hover:bg-[#193d43] border border-[#2A403C] text-[#A6B8B0] hover:text-white transition-colors cursor-pointer"
-                  title="Reset demo data"
-                >
-                  <RotateCcw className="w-3 h-3" />
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={resetAllData}
+                className="p-1.5 rounded bg-[#0B1D20] hover:bg-[#193d43] border border-[#2A403C] text-[#A6B8B0] hover:text-white transition-colors cursor-pointer"
+                title="Reset demo data"
+              >
+                <RotateCcw className="w-3 h-3" />
+              </button>
             </>
           )}
 
@@ -292,13 +217,12 @@ export const WalkthroughToolbar: React.FC = () => {
         </div>
       </div>
 
-      {/* Interactive Demo Toast Banner explaining the triggered simulation */}
       {demoToast && (
         <div className="bg-[#0B1D20] border-t border-[#2A403C] px-4 py-2.5 text-xs">
           <div className="max-w-7xl mx-auto flex items-center justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-2.5 flex-wrap">
               <span className="px-2 py-0.5 rounded-full bg-[#F2B134] text-[#102A2E] font-bold text-[10px] uppercase tracking-wider">
-                Demo Action
+                Update
               </span>
               <span className="font-semibold text-white">{demoToast.title}:</span>
               <span className="text-[#A6B8B0]">{demoToast.message}</span>

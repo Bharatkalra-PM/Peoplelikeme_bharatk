@@ -67,20 +67,19 @@ export const Details: React.FC = () => {
   const navigate = useNavigate();
 
   const [fromField, setFromField] = useState(
-    detailChips.from_field || backgroundInfo.manualIndustry || 'Sales & Consumer Goods'
+    detailChips.from_field || backgroundInfo.manualIndustry || ''
   );
   const [fromRole, setFromRole] = useState(
     detailChips.from_role ||
       backgroundInfo.manualRole ||
-      storyAnswers?.coming_from?.answer ||
-      'B2B Sales Lead'
+      storyAnswers?.coming_from?.answer || ''
   );
   const [yearsExperience, setYearsExperience] = useState<number>(
     detailChips.years_experience ??
       (backgroundInfo.manualYears ? parseInt(backgroundInfo.manualYears) || 5 : 5)
   );
   const [toRole, setToRole] = useState(
-    detailChips.to_role || storyAnswers?.going_to?.answer || 'Product Manager'
+    detailChips.to_role || storyAnswers?.going_to?.answer || ''
   );
   const [city, setCity] = useState(detailChips.city || 'Bengaluru');
   const [priority, setPriority] = useState(detailChips.priority || PRIORITY_OPTIONS[0]);

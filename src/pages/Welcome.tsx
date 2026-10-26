@@ -10,7 +10,7 @@ export const Welcome: React.FC = () => {
       <header className="max-w-5xl mx-auto w-full px-6 py-6 flex items-center justify-between">
         <BrandMark />
         <Link
-          to="/signup"
+          to="/signup?mode=signin"
           className="text-xs font-medium text-[#55665F] dark:text-[#A6B8B0] hover:text-[#13231F] dark:hover:text-[#E6EEEA] transition-colors"
         >
           Sign in
@@ -86,7 +86,7 @@ export const Welcome: React.FC = () => {
         {/* Primary Action Buttons */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
           <Link
-            to="/signup?role=switcher"
+            to="/signup?mode=signup&role=switcher"
             className="w-full sm:w-auto px-8 py-3.5 rounded-full bg-[#F2B134] hover:bg-[#e0a32e] text-[#102A2E] font-medium text-sm transition-transform active:scale-98 shadow-xs flex items-center justify-center gap-2"
           >
             <span>Find my people</span>
