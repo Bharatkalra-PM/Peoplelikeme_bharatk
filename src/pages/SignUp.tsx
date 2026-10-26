@@ -367,9 +367,14 @@ export const SignUp: React.FC = () => {
 
         {/* Demo Accounts Box for Quick Review */}
         <div className="p-4 rounded-2xl bg-[#FFFFFF] dark:bg-[#0E1E1D] border border-[#D3DDD8] dark:border-[#2A403C] space-y-2.5 shadow-2xs text-xs">
-          <p className="font-semibold uppercase tracking-wider text-[11px] text-[#8A5A00] dark:text-[#F2B134]">
-            Quick Demo Accounts
-          </p>
+          <div className="space-y-1">
+            <p className="font-semibold uppercase tracking-wider text-[11px] text-[#8A5A00] dark:text-[#F2B134]">
+              Quick Demo Accounts (For Evaluation & Demo Only)
+            </p>
+            <p className="text-[11px] text-[#55665F] dark:text-[#A6B8B0] leading-relaxed">
+              Provided strictly for demonstration and product evaluation purposes as a backup in case of any sign-in issue. Normal users can create their own account or sign in above.
+            </p>
+          </div>
           <div className="p-2.5 rounded-xl bg-[#F1F5F2] dark:bg-[#122523] flex items-center justify-between gap-2">
             <div>
               <p className="font-semibold text-[#13231F] dark:text-[#E6EEEA]">Bharat K. (Active Dashboard)</p>
