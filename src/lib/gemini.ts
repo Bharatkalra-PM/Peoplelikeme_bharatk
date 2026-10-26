@@ -1,0 +1,75 @@
+import { MoveProfile } from '../types';
+
+export async function transcribeVoiceAudio(audioBase64: string, mimeType = 'audio/webm'): Promise<string> {
+  try {
+    const res = await fetch('/api/gemini/transcribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ audioBase64, mimeType }),
+    });
+    if (!res.ok) throw new Error('Transcription network error');
+    const data = await res.json();
+    return data.transcript || '';
+  } catch (error) {
+    console.warn('Voice transcription fallback triggered');
+    return 'Voice answer recorded. (Feel free to edit this text)';
+  }
+}
+
+export async function requestDraftMoveProfile(payload: {
+  storyAnswers: Record<string, any>;
+  cvText?: string;
+  linkedInText?: string;
+  detailChips: {
+    dependants: string;
+    priority: string;
+    availability: string[];
+    city: string;
+    constraints: string[];
+  };
+}): Promise<Partial<MoveProfile>> {
+  try {
+    const res = await fetch('/api/gemini/draft-profile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error('Draft profile error');
+    const data = await res.json();
+    return data;
+  } catch (error) {
+    console.warn('Draft profile fallback:', error);
+    // Client fallback
+    return {
+      from_role: payload.storyAnswers?.coming_from || 'Sales Lead',
+      from_field: 'Sales & Client Strategy',
+      from_company_type: 'Growth tech company',
+      to_role: payload.storyAnswers?.going_to || 'Product Manager',
+      years_experience: 5,
+      months_since_leaving: null,
+      dependants: payload.detailChips.dependants || 'None',
+      priority: payload.detailChips.priority || 'Speed to role',
+      availability: payload.detailChips.availability || ['Weekday evenings'],
+      constraints: payload.detailChips.constraints || [],
+      story: payload.storyAnswers?.pushing_change || 'Transitioning customer-facing experience into product discovery and delivery.',
+    };
+  }
+}
+
+export async function requestMatchReason(switcherProfile: MoveProfile, guideProfile: MoveProfile): Promise<string> {
+  try {
+    const res = await fetch('/api/gemini/match-reason', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ switcherProfile, guideProfile }),
+    });
+    if (!res.ok) throw new Error('Match reason error');
+    const data = await res.json();
+    return data.reason || '';
+  } catch (error) {
+    if (guideProfile.went_back) {
+      return `Both moved from ${switcherProfile.from_role} into ${guideProfile.to_role}; later returned to ${guideProfile.from_role}.`;
+    }
+    return `Both navigated moving from ${switcherProfile.from_role} to ${guideProfile.to_role} with similar experience.`;
+  }
+}
