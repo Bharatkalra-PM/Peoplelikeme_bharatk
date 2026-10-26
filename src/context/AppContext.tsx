@@ -1,4 +1,4 @@
-﻿import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import {
   CareerGuideApplication,
   ConversationRating,
@@ -115,7 +115,7 @@ interface AppContextType {
   activeRequest: GuideRequest | null;
   rematchOffered: boolean;
   rematchReasonNote: string;
-  sendGuideRequest: (guideId: string, note: string, matchReason: string) => void;
+  sendGuideRequest: (guideId: string, note: string, matchReason: string, autoAccept?: boolean) => void;
   acceptGuideRequest: (requestId: string) => void;
   declineGuideRequest: (requestId: string) => void;
   simulate48HourExpiry: () => void;
@@ -677,8 +677,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         (r.status === 'pending' || r.status === 'accepted')
     ) || null;
 
-  // Send Career Guide request (with 48-hour respond_by and parallel pod placement)
-  const sendGuideRequest = (guideId: string, note: string, matchReason: string) => {
+  // Send guide request (with automatic demo acceptance)
+  const sendGuideRequest = (guideId: string, note: string, matchReason: string, autoAccept: boolean = true) => {
     if (!currentUser) return;
     const now = new Date();
     const respondBy = new Date(now.getTime() + 48 * 60 * 60 * 1000).toISOString();
@@ -688,7 +688,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       switcher_id: currentUser.id,
       guide_id: guideId,
       note,
-      status: 'pending',
+      status: autoAccept ? 'accepted' : 'pending',
       sent_at: now.toISOString(),
       respond_by: respondBy,
       match_reason: matchReason,
@@ -696,102 +696,122 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     setGuideRequests((prev) => [newRequest, ...prev]);
     setRematchOffered(false);
+
+    if (autoAccept) {
+      const matchedGuide = combinedGuidesList.find((g) => g.profile.id === guideId) || guidesList[0];
+
+      setGuidesList((prev) =>
+        prev.map((g) =>
+          g.profile.id === guideId
+            ? { ...g, active_switchers_count: g.active_switchers_count + 1 }
+            : g
+        )
+      );
+
+      const newRhythm: Rhythm = {
+        id: `rhythm-${Date.now()}`,
+        switcher_id: currentUser.id,
+        guide_id: guideId,
+        pod_id: 'pod-pm-forming',
+        start_date: new Date().toISOString().split('T')[0],
+        week: 1,
+        status: 'active',
+        guide_slot: 'Wednesdays 6:30 PM (6:00 PM – 8:00 PM)',
+      };
+      setCurrentRhythm(newRhythm);
+
+      const moveProf =
+        currentMoveProfile || draftedProfile || DEFAULT_DEMO_SWITCHER.move_profile;
+      const triedText = storyAnswers?.tried_so_far?.answer || backgroundInfo.cvText || '';
+      const milestones = draftPersonalMilestones(moveProf, { triedSoFar: triedText });
+      const week1Goals = [
+        'Confirm the first Career Guide conversation',
+        'Set this week’s goals',
+        'Introduce yourself to your pod',
+      ];
+      setSprintPlan({
+        id: `plan-${Date.now()}`,
+        switcher_id: currentUser.id,
+        guide_id: guideId,
+        status: 'draft',
+        milestones,
+        suggested_goals: {
+          1: week1Goals,
+          2: [
+            `Audit top 10 target ${moveProf.to_role} job descriptions`,
+            'Identify 3 transferable metric stories from your current role',
+          ],
+        },
+        updated_at: new Date().toISOString(),
+      });
+
+      const guideSession: Session = {
+        id: `sess-guide-${Date.now()}`,
+        rhythm_id: newRhythm.id,
+        pod_id: null,
+        kind: 'guide',
+        starts_at: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
+        duration_min: 30,
+        video_url: generateJitsiUrl('guide', Date.now().toString()),
+        agenda: 'Kickoff: Understand move timeline and first week priorities',
+        held: null,
+        title: `Guide conversation with ${matchedGuide.profile.first_name} ${matchedGuide.profile.last_initial}`,
+        with_name: `${matchedGuide.profile.first_name} ${matchedGuide.profile.last_initial}`,
+      };
+      setSessions((prev) => [guideSession, ...prev]);
+    }
   };
 
-  // Career Guide accepts request -> Starts Week 1 of 8, drafts 4-6 personal milestones & Week 1 goals
+  // Guide accepts request
   const acceptGuideRequest = (requestId: string) => {
+    let guideId = requestId;
+    const req = guideRequests.find((r) => r.id === requestId) || activeRequest;
+    if (req) {
+      guideId = req.guide_id;
+    }
+
     setGuideRequests((prev) =>
-      prev.map((r) => (r.id === requestId ? { ...r, status: 'accepted' as const } : r))
+      prev.map((r) => (r.id === requestId || r.guide_id === guideId ? { ...r, status: 'accepted' as const } : r))
     );
 
-    const req = guideRequests.find((r) => r.id === requestId) || activeRequest;
-    const guideId = req?.guide_id || 'guide-arjun-k';
-    const switcherId = req?.switcher_id || currentUser?.id || 'user-varun';
+    const matchedGuide = combinedGuidesList.find((g) => g.profile.id === guideId) || guidesList[0];
 
     setGuidesList((prev) =>
       prev.map((g) =>
-        g.profile.id === guideId
+        g.profile.id === matchedGuide.profile.id
           ? { ...g, active_switchers_count: g.active_switchers_count + 1 }
           : g
       )
     );
 
-    const matchedGuide =
-      activeGuidesPool.find((g) => g.profile.id === guideId) || activeGuidesPool[0];
-    const guideFirstName = matchedGuide?.profile.first_name || 'Arjun';
-    const guideInitial = matchedGuide?.profile.last_initial || 'K.';
+    const switcherId = currentUser?.id || 'user-bharat-k';
 
     const newRhythm: Rhythm = {
       id: `rhythm-${Date.now()}`,
       switcher_id: switcherId,
-      guide_id: guideId,
+      guide_id: matchedGuide.profile.id,
       pod_id: 'pod-pm-forming',
       start_date: new Date().toISOString().split('T')[0],
       week: 1,
       status: 'active',
-      guide_slot: 'Wednesdays 6:30 PM',
+      guide_slot: 'Wednesdays 6:30 PM (6:00 PM – 8:00 PM)',
     };
     setCurrentRhythm(newRhythm);
-
-    // Draft 4 to 6 personal milestones skipping anything already done
-    const moveProf =
-      currentMoveProfile || draftedProfile || DEFAULT_DEMO_SWITCHER.move_profile;
-    const triedText = storyAnswers?.tried_so_far?.answer || backgroundInfo.cvText || '';
-    const milestones = draftPersonalMilestones(moveProf, { triedSoFar: triedText });
-
-    // Week 1 always includes: confirm the first Career Guide conversation, set this week's goals, and introduce yourself to your pod
-    const week1Goals = [
-      'Confirm the first Career Guide conversation',
-      'Set this weekâ€™s goals',
-      'Introduce yourself to your pod',
-    ];
-
-    const newPlan: SprintPlan = {
-      id: `plan-${Date.now()}`,
-      switcher_id: switcherId,
-      guide_id: guideId,
-      status: 'draft',
-      milestones,
-      suggested_goals: {
-        1: week1Goals,
-        2: [
-          `Audit top 10 target ${moveProf.to_role} job descriptions`,
-          'Identify 3 transferable metric stories from your current role',
-        ],
-      },
-      updated_at: new Date().toISOString(),
-    };
-    setSprintPlan(newPlan);
-
-    // Populate Week 1 goals
-    const today = new Date().toISOString().split('T')[0];
-    setGoals(
-      week1Goals.map((text, idx) => ({
-        id: `goal-w1-${idx + 1}`,
-        user_id: switcherId,
-        week_start: today,
-        week_number: 1,
-        text,
-        status: 'not_yet',
-        suggested_by_guide: true,
-        updated_at: new Date().toISOString(),
-      }))
-    );
 
     const guideSession: Session = {
       id: `sess-guide-${Date.now()}`,
       rhythm_id: newRhythm.id,
       pod_id: null,
       kind: 'guide',
-      starts_at: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+      starts_at: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
       duration_min: 30,
       video_url: generateJitsiUrl('guide', Date.now().toString()),
-      agenda: `Kickoff: Finalise your 8-week plan with ${guideFirstName} and set Week 1 priorities`,
+      agenda: 'Kickoff: Understand move timeline and first week priorities',
       held: null,
-      title: `Career Guide conversation with ${guideFirstName} ${guideInitial}`,
-      with_name: `${guideFirstName} ${guideInitial}`,
+      title: `Guide conversation with ${matchedGuide.profile.first_name} ${matchedGuide.profile.last_initial}`,
+      with_name: `${matchedGuide.profile.first_name} ${matchedGuide.profile.last_initial}`,
     };
-    setSessions((prev) => [guideSession, ...prev.filter((s) => s.kind !== 'guide')]);
+    setSessions((prev) => [guideSession, ...prev]);
   };
 
   // Career Guide declines request -> automatically offer next best match
@@ -815,34 +835,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
   };
 
-  // 48-Hour Expiry -> automatically offer next best match (works even if clicked directly from top bar)
+  // 48-Hour Expiry Simulation
   const simulate48HourExpiry = () => {
-    const targetGuideId =
-      activeRequest?.guide_id ||
-      guideCandidates.matches[0]?.profile.id ||
-      'guide-arjun-k';
-    if (activeRequest) {
-      setGuideRequests((prev) =>
-        prev.map((r) =>
-          r.id === activeRequest.id ? { ...r, status: 'expired' as const } : r
-        )
-      );
-    }
-    setDeclinedGuideIds((prev) =>
-      prev.includes(targetGuideId) ? prev : [...prev, targetGuideId]
-    );
-    const guide = combinedGuidesList.find((g) => g.profile.id === targetGuideId);
-    const guideName = guide?.profile.first_name || 'Arjun';
     setRematchOffered(true);
-    setRematchReasonNote(
-      `${guideName} couldn't reply within 48 hours, so we automatically offered your next best Career Guide matches below.`
+    setRematchReasonNote("Your previous guide request reached the 48-hour response limit. We've automatically refreshed your alternative guide matches so you can keep moving forward.");
+    setGuideRequests((prev) =>
+      prev.map((r) => ({ ...r, status: 'expired' as const }))
     );
-    setDemoToast({
-      title: '48-Hour Auto-Rematch Triggered',
-      message: `${guideName} did not respond within 48 hours. We automatically removed ${guideName} and promoted your next closest Career Guide matches!`,
-      linkTo: '/guides',
-      linkLabel: 'View Next Best Matches',
-    });
   };
 
   // Pod & Rhythm

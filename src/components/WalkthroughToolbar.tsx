@@ -222,33 +222,26 @@ export const WalkthroughToolbar: React.FC = () => {
                 )}
               </div>
 
-              {/* Interactive Demo Triggers */}
+              {/* Simulation triggers */}
               <div className="flex items-center gap-1">
                 <button
                   type="button"
-                  onClick={handle48hRematch}
-                  className="px-2.5 py-1 rounded-full bg-[#0B1D20] hover:bg-[#122523] border border-[#2A403C] text-[11px] flex items-center gap-1 text-[#E58C73] hover:border-[#E58C73] transition-colors cursor-pointer"
-                  title="Demo what happens when a Career Guide does not reply in 48 hours: automatically offers your next best match"
+                  onClick={() => {
+                    simulate48HourExpiry();
+                    navigate('/guides');
+                  }}
+                  className="px-2.5 py-1 rounded bg-[#0B1D20] hover:bg-[#193d43] border border-[#2A403C] text-[11px] flex items-center gap-1 text-[#E58C73] hover:text-white transition-colors cursor-pointer"
+                  title="Simulate 48-Hour guide expiration to see automatic rematch state"
                 >
                   <Clock className="w-3 h-3" />
-                  <span>48h Rematch</span>
+                  <span>Simulate 48h Rematch</span>
                 </button>
 
                 <button
                   type="button"
-                  onClick={handleSimulateSlip}
-                  className="px-2.5 py-1 rounded-full bg-[#0B1D20] hover:bg-[#122523] border border-[#2A403C] text-[11px] flex items-center gap-1 text-[#F2B134] hover:border-[#F2B134] transition-colors cursor-pointer"
-                  title="Demo what happens when a switcher misses weekly goals: opens the personal Career Guide check-in screen"
-                >
-                  <HeartHandshake className="w-3 h-3" />
-                  <span>Check-in Nudge</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleAdvanceWeek}
-                  className="px-2.5 py-1 rounded-full bg-[#0B1D20] hover:bg-[#122523] border border-[#2A403C] text-[11px] flex items-center gap-1 text-[#5FBF8F] hover:border-[#5FBF8F] transition-colors cursor-pointer"
-                  title="Advance the 8-week sprint by 1 week"
+                  onClick={simulateWeekAdvance}
+                  className="px-2.5 py-1 rounded bg-[#0B1D20] hover:bg-[#193d43] border border-[#2A403C] text-[11px] flex items-center gap-1 text-[#5FBF8F] hover:text-white transition-colors cursor-pointer"
+                  title="Advance current sprint by 1 week"
                 >
                   <FastForward className="w-3 h-3" />
                   <span>+1 Wk</span>
@@ -256,12 +249,11 @@ export const WalkthroughToolbar: React.FC = () => {
 
                 <button
                   type="button"
-                  onClick={handleReset}
-                  className="px-2 py-1 rounded-full bg-[#0B1D20] hover:bg-[#122523] border border-[#2A403C] text-[#A6B8B0] hover:text-white flex items-center gap-1 cursor-pointer"
-                  title="Reset demo data to Week 1"
+                  onClick={resetAllData}
+                  className="p-1.5 rounded bg-[#0B1D20] hover:bg-[#193d43] border border-[#2A403C] text-[#A6B8B0] hover:text-white transition-colors cursor-pointer"
+                  title="Reset demo data"
                 >
                   <RotateCcw className="w-3 h-3" />
-                  <span className="hidden lg:inline">Reset</span>
                 </button>
               </div>
             </>

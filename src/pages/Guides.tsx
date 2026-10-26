@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { BrandMark } from '../components/BrandMark';
@@ -12,6 +12,7 @@ import {
   SlidersHorizontal,
   Star,
   ArrowLeft,
+  ArrowRight,
   X,
   Check,
 } from 'lucide-react';
@@ -275,14 +276,30 @@ export const Guides: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Action Button */}
-                  <div className="pt-5 mt-4 border-t border-[#D3DDD8] dark:border-[#2A403C]">
+                  {/* Actions: Direct Connect & View Story */}
+                  <div className="pt-4 mt-3 border-t border-[#D3DDD8] dark:border-[#2A403C] space-y-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        sendGuideRequest(
+                          guide.id,
+                          `Hi ${guide.first_name}, I saw your transition path and would love to connect for guidance during my move.`,
+                          candidate.match_reason,
+                          true
+                        );
+                        navigate('/request-sent');
+                      }}
+                      className="w-full py-2.5 rounded-full bg-[#102A2E] hover:bg-[#193d43] dark:bg-[#F2B134] dark:hover:bg-[#e0a32e] text-white dark:text-[#102A2E] text-xs font-semibold transition-colors text-center flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
+                    >
+                      <span>Connect with {guide.first_name}</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
                     <button
                       type="button"
                       onClick={() => navigate(`/guides/${guide.id}`)}
-                      className="w-full py-2.5 rounded-full border border-[#102A2E] dark:border-[#F2B134] hover:bg-[#102A2E] hover:text-white dark:hover:bg-[#F2B134] dark:hover:text-[#102A2E] text-xs font-medium transition-colors text-center cursor-pointer"
+                      className="w-full py-2 rounded-full border border-[#D3DDD8] dark:border-[#2A403C] hover:bg-[#F1F5F2] dark:hover:bg-[#122523] text-xs font-medium text-[#55665F] dark:text-[#A6B8B0] hover:text-[#13231F] dark:hover:text-[#E6EEEA] transition-colors text-center cursor-pointer"
                     >
-                      Ask {guide.first_name} to be your Career Guide
+                      View full story & details
                     </button>
                   </div>
                 </div>
