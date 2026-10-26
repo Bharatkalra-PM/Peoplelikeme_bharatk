@@ -56,6 +56,7 @@ export const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }
       ]
     : [
         { label: 'Home', to: '/home', icon: Home },
+        { label: 'My plan', to: '/plan', icon: Calendar },
         { label: 'Pod', to: '/pod', icon: Users },
         { label: 'Career Guide', to: '/guide', icon: Compass },
         { label: 'Goals', to: '/goals', icon: CheckSquare },

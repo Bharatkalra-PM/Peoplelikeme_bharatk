@@ -20,6 +20,7 @@ import { RequestSent } from './pages/RequestSent';
 import { PodIntro } from './pages/PodIntro';
 import { RhythmSetup } from './pages/RhythmSetup';
 import { Home } from './pages/Home';
+import { MyPlan } from './pages/MyPlan';
 import { Goals } from './pages/Goals';
 import { Pod } from './pages/Pod';
 import { GuideSpace } from './pages/GuideSpace';
@@ -68,6 +69,7 @@ export default function App() {
 
             {/* Active Sprint (Switcher Experience) */}
             <Route path="/home" element={<Home />} />
+            <Route path="/plan" element={<MyPlan />} />
             <Route path="/goals" element={<Goals />} />
             <Route path="/pod" element={<Pod />} />
             <Route path="/guide" element={<GuideSpace />} />
