@@ -859,7 +859,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const podMembers = React.useMemo(() => {
     if (!currentPod) return [];
     const baseKey = currentPod.id.replace(/^sample-/, '');
-    const members = podMembersMap[currentPod.id] || podMembersMap[baseKey] || [];
+    const stored = podMembersMap[currentPod.id] || podMembersMap[baseKey] || []; const seedDefaults = SEED_POD_MEMBERS[baseKey] || SEED_POD_MEMBERS['pod-pm-forming'] || []; const members: PodMember[] = [...stored]; seedDefaults.forEach((sm) => { if (!members.some((m) => m.user_id === sm.user_id)) members.push(sm); });
     if (demoMode) {
       return members.map((m) => ({
         ...m,
