@@ -41,11 +41,16 @@ export const WalkthroughToolbar: React.FC = () => {
   const handleToggleDemoMode = () => {
     const next = !demoMode;
     setDemoMode(next);
+    if (!next) {
+      setShowPersonaDropdown(false);
+    }
     setDemoToast({
-      title: next ? 'Demo Mode Enabled (12 Sample Career Guides)' : 'Demo Mode Disabled (Live Profiles)',
+      title: next
+        ? 'Sample Guides Enabled (Created Only for Demo & Evaluation)'
+        : 'Sample Guides Disabled (Standard User View)',
       message: next
-        ? 'Showing 12 sample Career Guides and 2 sample pods. Every sample person is clearly labelled "Sample profile".'
-        : 'Switched back to standard verified Career Guides.',
+        ? 'Sample Guides and Demo Account Switching are created strictly for demonstration purposes and can be removed later on.'
+        : 'Switched back to standard user mode. Demo account switching is hidden.',
       linkTo: '/guides',
       linkLabel: 'View Career Guides',
     });
@@ -57,7 +62,7 @@ export const WalkthroughToolbar: React.FC = () => {
       className="bg-[#102A2E] text-[#E6EEEA] border-b border-[#2A403C] text-xs sticky top-0 z-40 shadow-sm"
     >
       <div className="max-w-7xl mx-auto px-3 py-1.5 flex items-center justify-between gap-2 flex-wrap">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <div className="flex items-center gap-1.5 bg-[#0B1D20] px-2.5 py-1 rounded-full border border-[#2A403C]">
             <User className="w-3.5 h-3.5 text-[#F2B134]" />
             <span className="text-[11px] font-medium text-white">
@@ -69,12 +74,18 @@ export const WalkthroughToolbar: React.FC = () => {
               </span>
             )}
           </div>
+
+          {demoMode && (
+            <span className="text-[10px] text-[#F2B134] bg-[#F2B134]/10 border border-[#F2B134]/30 px-2.5 py-0.5 rounded-full">
+              Note: Sample Guides & Demo Switcher are created only for demo evaluation and can be removed later on.
+            </span>
+          )}
         </div>
 
         <div className="flex items-center gap-1.5 flex-wrap">
           {!collapsed && (
             <>
-              {/* DEMO_MODE Toggle */}
+              {/* DEMO_MODE / Sample Guides Toggle */}
               <button
                 type="button"
                 onClick={handleToggleDemoMode}
@@ -83,10 +94,10 @@ export const WalkthroughToolbar: React.FC = () => {
                     ? 'bg-[#F2B134]/20 border-[#F2B134] text-[#F2B134] font-semibold'
                     : 'bg-[#0B1D20] hover:bg-[#122523] border-[#2A403C] text-[#A6B8B0] hover:text-white'
                 }`}
-                title="Toggle sample Career Guides & pods"
+                title="Sample Guides are created strictly for demo perspective and can be removed later on"
               >
                 <FlaskConical className="w-3 h-3" />
-                <span>Sample Guides: {demoMode ? 'ON' : 'OFF'}</span>
+                <span>Sample Guides (Demo Only): {demoMode ? 'ON' : 'OFF'}</span>
               </button>
 
               {currentUser.role === 'admin' && (
@@ -101,99 +112,107 @@ export const WalkthroughToolbar: React.FC = () => {
                 </button>
               )}
 
-              {/* Switch Account Dropdown */}
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => setShowPersonaDropdown(!showPersonaDropdown)}
-                  className="px-2.5 py-1 rounded-full bg-[#0B1D20] hover:bg-[#122523] border border-[#2A403C] text-[11px] text-[#E6EEEA] hover:text-white flex items-center gap-1 transition-colors cursor-pointer"
-                >
-                  <span>Switch Account</span>
-                  <ChevronDown className="w-3 h-3" />
-                </button>
-
-                {showPersonaDropdown && (
-                  <div className="absolute right-0 top-full mt-1 w-72 bg-[#0B1D20] border border-[#2A403C] rounded-xl shadow-xl p-1.5 z-50 space-y-1">
+              {/* Switch Account Dropdown & Reset ONLY appear when Sample Guides (Demo Mode) is turned ON */}
+              {demoMode && (
+                <>
+                  <div className="relative">
                     <button
                       type="button"
-                      onClick={() => {
-                        switchUser('switcher_priya');
-                        setShowPersonaDropdown(false);
-                        navigate('/home');
-                      }}
-                      className="w-full text-left px-2.5 py-2 rounded-lg text-[11px] hover:bg-[#122523] text-white flex items-center justify-between cursor-pointer"
+                      onClick={() => setShowPersonaDropdown(!showPersonaDropdown)}
+                      className="px-2.5 py-1 rounded-full bg-[#0B1D20] hover:bg-[#122523] border border-[#F2B134]/50 text-[11px] text-[#F2B134] hover:text-white flex items-center gap-1 transition-colors cursor-pointer"
                     >
-                      <div>
-                        <p className="font-semibold">Bharat K. (bharatk6325@gmail.com)</p>
-                        <p className="text-[10px] text-[#A6B8B0]">Active Switcher • Week 1 of 8</p>
+                      <span>Demo Switch Account</span>
+                      <ChevronDown className="w-3 h-3" />
+                    </button>
+
+                    {showPersonaDropdown && (
+                      <div className="absolute right-0 top-full mt-1 w-72 bg-[#0B1D20] border border-[#2A403C] rounded-xl shadow-xl p-2 z-50 space-y-1">
+                        <div className="px-2 py-1.5 rounded-lg bg-[#122523] border border-[#2A403C] text-[10px] text-[#A6B8B0] leading-relaxed">
+                          <strong className="text-[#F2B134]">Demo Evaluation Only:</strong> Sample guides and role switching are included only for demo review and can be removed later on.
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            switchUser('switcher_priya');
+                            setShowPersonaDropdown(false);
+                            navigate('/home');
+                          }}
+                          className="w-full text-left px-2.5 py-2 rounded-lg text-[11px] hover:bg-[#122523] text-white flex items-center justify-between cursor-pointer"
+                        >
+                          <div>
+                            <p className="font-semibold">Bharat K. (bharatk6325@gmail.com)</p>
+                            <p className="text-[10px] text-[#A6B8B0]">Active Switcher • Week 1 of 8</p>
+                          </div>
+                          <span className="text-[10px] text-[#F2B134] font-semibold">Demo</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            switchUser('new_switcher');
+                            setShowPersonaDropdown(false);
+                            navigate('/onboarding/objective');
+                          }}
+                          className="w-full text-left px-2.5 py-2 rounded-lg text-[11px] hover:bg-[#122523] text-[#E6EEEA] hover:text-white cursor-pointer"
+                        >
+                          <p className="font-semibold">Varun K. (varunk6325@gmail.com)</p>
+                          <p className="text-[10px] text-[#A6B8B0]">New Switcher • Fresh Onboarding</p>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            switchUser('guide_arjun');
+                            setShowPersonaDropdown(false);
+                            navigate('/guide-home');
+                          }}
+                          className="w-full text-left px-2.5 py-2 rounded-lg text-[11px] hover:bg-[#122523] text-[#E6EEEA] hover:text-white cursor-pointer"
+                        >
+                          <p className="font-semibold">Arjun K. (Career Guide View)</p>
+                          <p className="text-[10px] text-[#A6B8B0]">Accept requests & edit 8-week plan</p>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            switchUser('admin');
+                            setShowPersonaDropdown(false);
+                            navigate('/admin');
+                          }}
+                          className="w-full text-left px-2.5 py-2 rounded-lg text-[11px] hover:bg-[#122523] text-[#E6EEEA] hover:text-white cursor-pointer"
+                        >
+                          <p className="font-semibold">Admin (Approvals & Moderation)</p>
+                          <p className="text-[10px] text-[#A6B8B0]">Review Career Guide applications</p>
+                        </button>
+
+                        <div className="border-t border-[#2A403C] pt-1 mt-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowPersonaDropdown(false);
+                              navigate('/signup');
+                            }}
+                            className="w-full text-left px-2.5 py-1.5 rounded-lg text-[11px] hover:bg-[#122523] text-[#F2B134] flex items-center gap-1.5 cursor-pointer"
+                          >
+                            <KeyRound className="w-3 h-3" />
+                            <span>Sign In / Create Another Account</span>
+                          </button>
+                        </div>
                       </div>
-                      <span className="text-[10px] text-[#F2B134] font-semibold">Active</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        switchUser('new_switcher');
-                        setShowPersonaDropdown(false);
-                        navigate('/onboarding/objective');
-                      }}
-                      className="w-full text-left px-2.5 py-2 rounded-lg text-[11px] hover:bg-[#122523] text-[#E6EEEA] hover:text-white cursor-pointer"
-                    >
-                      <p className="font-semibold">Varun K. (varunk6325@gmail.com)</p>
-                      <p className="text-[10px] text-[#A6B8B0]">New Switcher • Fresh Onboarding</p>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        switchUser('guide_arjun');
-                        setShowPersonaDropdown(false);
-                        navigate('/guide-home');
-                      }}
-                      className="w-full text-left px-2.5 py-2 rounded-lg text-[11px] hover:bg-[#122523] text-[#E6EEEA] hover:text-white cursor-pointer"
-                    >
-                      <p className="font-semibold">Arjun K. (Career Guide View)</p>
-                      <p className="text-[10px] text-[#A6B8B0]">Accept requests & edit 8-week plan</p>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        switchUser('admin');
-                        setShowPersonaDropdown(false);
-                        navigate('/admin');
-                      }}
-                      className="w-full text-left px-2.5 py-2 rounded-lg text-[11px] hover:bg-[#122523] text-[#E6EEEA] hover:text-white cursor-pointer"
-                    >
-                      <p className="font-semibold">Admin (Approvals & Moderation)</p>
-                      <p className="text-[10px] text-[#A6B8B0]">Review Career Guide applications</p>
-                    </button>
-
-                    <div className="border-t border-[#2A403C] pt-1 mt-1">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowPersonaDropdown(false);
-                          navigate('/signup');
-                        }}
-                        className="w-full text-left px-2.5 py-1.5 rounded-lg text-[11px] hover:bg-[#122523] text-[#F2B134] flex items-center gap-1.5 cursor-pointer"
-                      >
-                        <KeyRound className="w-3 h-3" />
-                        <span>Sign In / Create Another Account</span>
-                      </button>
-                    </div>
+                    )}
                   </div>
-                )}
-              </div>
 
-              <button
-                type="button"
-                onClick={resetAllData}
-                className="p-1.5 rounded bg-[#0B1D20] hover:bg-[#193d43] border border-[#2A403C] text-[#A6B8B0] hover:text-white transition-colors cursor-pointer"
-                title="Reset demo data"
-              >
-                <RotateCcw className="w-3 h-3" />
-              </button>
+                  <button
+                    type="button"
+                    onClick={resetAllData}
+                    className="p-1.5 rounded bg-[#0B1D20] hover:bg-[#193d43] border border-[#2A403C] text-[#A6B8B0] hover:text-white transition-colors cursor-pointer"
+                    title="Reset demo data"
+                  >
+                    <RotateCcw className="w-3 h-3" />
+                  </button>
+                </>
+              )}
             </>
           )}
 
@@ -235,7 +254,7 @@ export const WalkthroughToolbar: React.FC = () => {
           <div className="max-w-7xl mx-auto flex items-center justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-2.5 flex-wrap">
               <span className="px-2 py-0.5 rounded-full bg-[#F2B134] text-[#102A2E] font-bold text-[10px] uppercase tracking-wider">
-                Update
+                Demo Notice
               </span>
               <span className="font-semibold text-white">{demoToast.title}:</span>
               <span className="text-[#A6B8B0]">{demoToast.message}</span>
