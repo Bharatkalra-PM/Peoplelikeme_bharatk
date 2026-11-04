@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
+import { InitialsAvatar } from '../components/InitialsAvatar';
 import { WhyThisMatchModal } from '../components/WhyThisMatchModal';
 import {
   CheckCircle,
@@ -236,7 +237,7 @@ export const Home: React.FC = () => {
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto" data-testid="personal-progress-dashboard">
-      {/* Header: Week N of 8 + Why this match button */}
+      {/* Header: Week N of 8 + Career Guide & Pod Avatars + Why this match button */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#D3DDD8] dark:border-[#2A403C]">
         <div>
           <span className="text-[11px] font-semibold uppercase tracking-wider text-[#8A5A00] dark:text-[#F2B134]">
@@ -245,9 +246,42 @@ export const Home: React.FC = () => {
           <h1 className="font-heading text-2xl sm:text-3xl font-normal text-[#13231F] dark:text-[#E6EEEA]">
             Week {currentWeek} of 8
           </h1>
-          <p className="text-xs text-[#55665F] dark:text-[#A6B8B0] mt-0.5">
-            Career Guide: {matchedGuide.first_name} {matchedGuide.last_initial} • {userPod?.name || 'Your Pod'}
-          </p>
+          <div className="flex items-center flex-wrap gap-3 mt-1.5">
+            <Link
+              to="/guide"
+              className="inline-flex items-center gap-2 pr-3 py-1 rounded-full bg-[#FFFFFF] dark:bg-[#0E1E1D] border border-[#D3DDD8] dark:border-[#2A403C] hover:border-[#F2B134] text-xs font-medium text-[#13231F] dark:text-[#E6EEEA]"
+            >
+              <InitialsAvatar
+                firstName={matchedGuide.first_name}
+                lastInitial={matchedGuide.last_initial}
+                size="sm"
+              />
+              <span>
+                Career Guide: <strong>{matchedGuide.first_name} {matchedGuide.last_initial}</strong>
+              </span>
+            </Link>
+
+            <Link
+              to="/pod"
+              className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-[#FFFFFF] dark:bg-[#0E1E1D] border border-[#D3DDD8] dark:border-[#2A403C] hover:border-[#F2B134] text-xs font-medium text-[#13231F] dark:text-[#E6EEEA]"
+            >
+              <div className="flex items-center -space-x-1.5">
+                {(userPod?.members || [])
+                  .filter((m) => m.user_id !== currentUser?.id)
+                  .slice(0, 4)
+                  .map((m) => (
+                    <InitialsAvatar
+                      key={m.user_id}
+                      firstName={m.profile.first_name}
+                      lastInitial={m.profile.last_initial}
+                      size="sm"
+                      className="w-6 h-6 ring-1 ring-white dark:ring-[#0E1E1D]"
+                    />
+                  ))}
+              </div>
+              <span>{userPod?.name || 'Your Pod'}</span>
+            </Link>
+          </div>
         </div>
 
         <button
@@ -719,7 +753,7 @@ export const Home: React.FC = () => {
         )}
       </section>
 
-      {/* Three Clear 1-Tap Entry Points: My plan, My pod, My Career Guide */}
+      {/* Three Clear 1-Tap Entry Points: My plan, My pod (with member photos), My Career Guide (with guide photo) */}
       <section className="grid grid-cols-1 sm:grid-cols-3 gap-3" data-testid="dashboard-entry-points">
         <Link
           to="/plan"
@@ -727,7 +761,7 @@ export const Home: React.FC = () => {
           className="bg-[#FFFFFF] dark:bg-[#0E1E1D] border border-[#D3DDD8] dark:border-[#2A403C] hover:border-[#F2B134] rounded-2xl p-4 flex flex-col justify-between gap-3 transition-all shadow-2xs group"
         >
           <div className="flex items-center justify-between">
-            <div className="w-8 h-8 rounded-full bg-[#F2B134]/15 text-[#8A5A00] dark:text-[#F2B134] flex items-center justify-center">
+            <div className="w-10 h-10 rounded-full bg-[#F2B134]/15 text-[#8A5A00] dark:text-[#F2B134] flex items-center justify-center">
               <Flag className="w-4 h-4" />
             </div>
             <ArrowRight className="w-4 h-4 text-[#55665F] group-hover:translate-x-0.5 transition-transform" />
@@ -748,17 +782,28 @@ export const Home: React.FC = () => {
           className="bg-[#FFFFFF] dark:bg-[#0E1E1D] border border-[#D3DDD8] dark:border-[#2A403C] hover:border-[#F2B134] rounded-2xl p-4 flex flex-col justify-between gap-3 transition-all shadow-2xs group"
         >
           <div className="flex items-center justify-between">
-            <div className="w-8 h-8 rounded-full bg-[#2D6B8F]/15 text-[#2D6B8F] dark:text-[#7FB6D6] flex items-center justify-center">
-              <Users className="w-4 h-4" />
+            <div className="flex items-center -space-x-2">
+              {(userPod?.members || [])
+                .filter((m) => m.user_id !== currentUser?.id)
+                .slice(0, 4)
+                .map((m) => (
+                  <InitialsAvatar
+                    key={m.user_id}
+                    firstName={m.profile.first_name}
+                    lastInitial={m.profile.last_initial}
+                    size="sm"
+                    className="ring-2 ring-white dark:ring-[#0E1E1D]"
+                  />
+                ))}
             </div>
             <ArrowRight className="w-4 h-4 text-[#55665F] group-hover:translate-x-0.5 transition-transform" />
           </div>
           <div>
             <h3 className="text-sm font-semibold text-[#13231F] dark:text-[#E6EEEA]">
-              My pod
+              My pod ({(userPod?.members || []).filter((m) => m.user_id !== currentUser?.id).length + 1} members)
             </h3>
             <p className="text-[11px] text-[#55665F] dark:text-[#A6B8B0] mt-0.5">
-              Meet pod members &amp; share weekly wins
+              View pod member profiles &amp; share wins
             </p>
           </div>
         </Link>
@@ -769,8 +814,15 @@ export const Home: React.FC = () => {
           className="bg-[#FFFFFF] dark:bg-[#0E1E1D] border border-[#D3DDD8] dark:border-[#2A403C] hover:border-[#F2B134] rounded-2xl p-4 flex flex-col justify-between gap-3 transition-all shadow-2xs group"
         >
           <div className="flex items-center justify-between">
-            <div className="w-8 h-8 rounded-full bg-[#2F7D5B]/15 text-[#2F7D5B] dark:text-[#5FBF8F] flex items-center justify-center">
-              <Compass className="w-4 h-4" />
+            <div className="flex items-center gap-2">
+              <InitialsAvatar
+                firstName={matchedGuide.first_name}
+                lastInitial={matchedGuide.last_initial}
+                size="md"
+              />
+              <span className="text-xs font-semibold text-[#13231F] dark:text-[#E6EEEA]">
+                {matchedGuide.first_name} {matchedGuide.last_initial}
+              </span>
             </div>
             <ArrowRight className="w-4 h-4 text-[#55665F] group-hover:translate-x-0.5 transition-transform" />
           </div>
