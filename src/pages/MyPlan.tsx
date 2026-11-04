@@ -34,7 +34,7 @@ export const MyPlan: React.FC = () => {
   const [showHowWeekWorks, setShowHowWeekWorks] = useState<boolean>(() => {
     return localStorage.getItem('plm_seen_how_week_works') !== 'true';
   });
-  const [showMoreMilestones, setShowMoreMilestones] = useState(false);
+  const [showMoreMilestones, setShowMoreMilestones] = useState(true);
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
   const [guideSlot, setGuideSlot] = useState(
     currentRhythm?.guide_slot || 'Wednesdays 6:30 PM'
@@ -58,9 +58,7 @@ export const MyPlan: React.FC = () => {
     : [];
 
   const completedCount = sortedMilestones.filter((m) => m.completed).length;
-  const visibleMilestones = showMoreMilestones
-    ? sortedMilestones
-    : sortedMilestones.slice(0, 4);
+  const visibleMilestones = sortedMilestones;
 
   const getGuidingNote = (kind: string) => {
     if (kind === 'guide') {
@@ -101,7 +99,7 @@ export const MyPlan: React.FC = () => {
             My Plan & Weekly Calendar
           </h1>
           <p className="text-xs sm:text-sm text-[#55665F] dark:text-[#A6B8B0] mt-0.5">
-            Week {currentWeek} of 8 • {completedCount} of {sortedMilestones.length || 5} milestones reached
+            Week {currentWeek} of 8 • {completedCount} of {sortedMilestones.length || 5} milestones reached (set basis your 1:1 with {matchedGuide.first_name})
           </p>
         </div>
 
@@ -209,7 +207,7 @@ export const MyPlan: React.FC = () => {
                     </span>
                   </div>
 
-                  {/* Guiding Instruction Note (Feedback #3) */}
+                  {/* Guiding Instruction Note */}
                   <h3 className="text-sm font-semibold text-[#13231F] dark:text-[#E6EEEA]">
                     {guidingNote}
                   </h3>
@@ -243,7 +241,7 @@ export const MyPlan: React.FC = () => {
         </div>
       </section>
 
-      {/* 8-Week Milestones Section (with "More" collapse for secondary details) */}
+      {/* 8-Week Milestones Section */}
       <section className="space-y-3" data-testid="eight-week-plan-section">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-[#55665F] dark:text-[#A6B8B0] flex items-center gap-1.5">
@@ -261,7 +259,7 @@ export const MyPlan: React.FC = () => {
 
         <div className="bg-[#FFFFFF] dark:bg-[#0E1E1D] border border-[#D3DDD8] dark:border-[#2A403C] rounded-2xl p-5 space-y-5 shadow-xs">
           {/* 8-Week Progress Timeline Bar */}
-          <div className="grid grid-cols-8 gap-1.5">
+          <div className="grid grid-cols-4 sm:grid-cols-8 gap-1.5">
             {Array.from({ length: 8 }).map((_, idx) => {
               const wk = idx + 1;
               const isCurrent = wk === currentWeek;
@@ -277,13 +275,13 @@ export const MyPlan: React.FC = () => {
                       : 'border-[#D3DDD8]/60 dark:border-[#2A403C] text-[#55665F] dark:text-[#A6B8B0]'
                   }`}
                 >
-                  <span className="text-[10px] block">Wk {wk}</span>
+                  <span className="text-[10px] block">Week {wk}</span>
                 </div>
               );
             })}
           </div>
 
-          {/* Milestones Cards */}
+          {/* All Milestones Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {visibleMilestones.map((m) => (
               <div
@@ -307,14 +305,14 @@ export const MyPlan: React.FC = () => {
             ))}
           </div>
 
-          {/* Collapse secondary details behind "More" */}
+          {/* Custom milestone form toggle */}
           <div className="pt-2 border-t border-[#D3DDD8]/60 dark:border-[#2A403C] flex items-center justify-between">
             <button
               type="button"
               onClick={() => setShowMoreMilestones(!showMoreMilestones)}
               className="text-xs font-semibold text-[#2D6B8F] dark:text-[#7FB6D6] flex items-center gap-1 cursor-pointer"
             >
-              <span>{showMoreMilestones ? 'Less details' : 'More milestones & custom plan'}</span>
+              <span>{showMoreMilestones ? 'Hide custom milestone form' : 'Add custom milestone'}</span>
               {showMoreMilestones ? (
                 <ChevronUp className="w-3.5 h-3.5" />
               ) : (

@@ -7,7 +7,6 @@ import {
   Mail,
   Lock,
   User,
-  Check,
   X,
   AlertCircle,
   RefreshCw,
@@ -17,11 +16,9 @@ import {
 
 export const SignUp: React.FC = () => {
   const [searchParams] = useSearchParams();
-  const initialRole = (searchParams.get('role') as 'switcher' | 'guide') || 'switcher';
   const initialMode = searchParams.get('mode') === 'signin' ? 'signin' : 'signup';
 
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>(initialMode);
-  const [role, setRole] = useState<'switcher' | 'guide'>(initialRole);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
@@ -78,7 +75,7 @@ export const SignUp: React.FC = () => {
           email: cleanEmail,
           password,
           name: displayName,
-          role,
+          role: 'switcher',
         };
         localStorage.setItem('plm_user_credentials_v1', JSON.stringify(savedCreds));
       }
@@ -86,9 +83,13 @@ export const SignUp: React.FC = () => {
       // ignore storage error
     }
 
-    const isAdminLogin = cleanEmail === 'admin@peoplelikeme.app' || cleanEmail === 'admin@1234' || cleanEmail === 'admin@peoplelikeme.in';
-    const effectiveRole = isAdminLogin ? 'admin' : role;
-    const isExplicitNewSignup = authMode === 'signup' && cleanEmail !== 'bharatk6325@gmail.com' && !isAdminLogin;
+    const isAdminLogin =
+      cleanEmail === 'admin@peoplelikeme.app' ||
+      cleanEmail === 'admin@1234' ||
+      cleanEmail === 'admin@peoplelikeme.in';
+    const effectiveRole = isAdminLogin ? 'admin' : 'switcher';
+    const isExplicitNewSignup =
+      authMode === 'signup' && cleanEmail !== 'bharatk6325@gmail.com' && !isAdminLogin;
     const { targetRoute } = login(
       cleanEmail,
       effectiveRole,
@@ -112,7 +113,7 @@ export const SignUp: React.FC = () => {
       finalName = `${capitalized}`;
     }
 
-    const { targetRoute } = login(gmailInput.trim(), role, finalName);
+    const { targetRoute } = login(gmailInput.trim(), 'switcher', finalName);
     setShowGmailModal(false);
     setIsSubmitting(false);
     navigate(targetRoute);
@@ -154,7 +155,7 @@ export const SignUp: React.FC = () => {
           <h1 className="font-heading text-2xl sm:text-3xl font-normal text-[#13231F] dark:text-[#E6EEEA]">
             {authMode === 'signin'
               ? 'Sign in to your account'
-              : 'Create your account'}
+              : 'Find your people'}
           </h1>
           <p className="text-sm text-[#55665F] dark:text-[#A6B8B0]">
             {authMode === 'signin'
@@ -218,39 +219,6 @@ export const SignUp: React.FC = () => {
 
         {/* Main Email & Password Form Card */}
         <div className="bg-[#FFFFFF] dark:bg-[#0E1E1D] border border-[#D3DDD8] dark:border-[#2A403C] rounded-2xl p-6 space-y-5 shadow-xs">
-          {/* Role selector when creating an account */}
-          {authMode === 'signup' && (
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-[#55665F] dark:text-[#A6B8B0]">
-                How are you joining?
-              </label>
-              <div className="grid grid-cols-2 gap-2 text-xs font-medium">
-                <button
-                  type="button"
-                  onClick={() => setRole('switcher')}
-                  className={`py-2.5 px-3 rounded-xl border transition-colors cursor-pointer ${
-                    role === 'switcher'
-                      ? 'bg-[#102A2E] text-white border-[#102A2E] dark:bg-[#F2B134] dark:text-[#102A2E] dark:border-[#F2B134]'
-                      : 'border-[#D3DDD8] dark:border-[#2A403C] text-[#55665F] dark:text-[#A6B8B0]'
-                  }`}
-                >
-                  Making a career switch
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setRole('guide')}
-                  className={`py-2.5 px-3 rounded-xl border transition-colors cursor-pointer ${
-                    role === 'guide'
-                      ? 'bg-[#102A2E] text-white border-[#102A2E] dark:bg-[#F2B134] dark:text-[#102A2E] dark:border-[#F2B134]'
-                      : 'border-[#D3DDD8] dark:border-[#2A403C] text-[#55665F] dark:text-[#A6B8B0]'
-                  }`}
-                >
-                  Becoming a Career Guide
-                </button>
-              </div>
-            </div>
-          )}
-
           <form onSubmit={handleSubmit} className="space-y-4">
             {authMode === 'signup' && (
               <div className="space-y-1">
@@ -286,11 +254,11 @@ export const SignUp: React.FC = () => {
                 <Mail className="w-4 h-4 text-[#55665F] dark:text-[#A6B8B0] absolute left-3.5 top-3" />
                 <input
                   id="signup-email"
-                  type={authMode === "signin" ? "text" : "email"}
+                  type={authMode === 'signin' ? 'text' : 'email'}
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder={authMode === "signin" ? "you@example.com or admin@1234" : "you@example.com"}
+                  placeholder={authMode === 'signin' ? 'you@example.com or admin@1234' : 'you@example.com'}
                   className="w-full pl-10 pr-3.5 py-2.5 rounded-[10px] border border-[#D3DDD8] dark:border-[#2A403C] bg-[#F1F5F2]/40 dark:bg-[#122523]/40 text-[#13231F] dark:text-[#E6EEEA] text-sm focus:bg-white dark:focus:bg-[#0E1E1D]"
                 />
               </div>
@@ -436,30 +404,41 @@ export const SignUp: React.FC = () => {
         </p>
       </main>
 
-      <footer className="text-center text-xs text-[#55665F] dark:text-[#A6B8B0] py-4">
-        {authMode === 'signin' ? (
-          <>
-            New to People Like Me?{' '}
-            <button
-              type="button"
-              onClick={() => setAuthMode('signup')}
-              className="text-[#2D6B8F] dark:text-[#7FB6D6] hover:underline font-semibold cursor-pointer"
-            >
-              Create your account
-            </button>
-          </>
-        ) : (
-          <>
-            Already have an account?{' '}
-            <button
-              type="button"
-              onClick={() => setAuthMode('signin')}
-              className="text-[#2D6B8F] dark:text-[#7FB6D6] hover:underline font-semibold cursor-pointer"
-            >
-              Sign in with email
-            </button>
-          </>
-        )}
+      <footer className="text-center text-xs text-[#55665F] dark:text-[#A6B8B0] py-4 space-y-1.5">
+        <div>
+          {authMode === 'signin' ? (
+            <>
+              New to People Like Me?{' '}
+              <button
+                type="button"
+                onClick={() => setAuthMode('signup')}
+                className="text-[#2D6B8F] dark:text-[#7FB6D6] hover:underline font-semibold cursor-pointer"
+              >
+                Create your account
+              </button>
+            </>
+          ) : (
+            <>
+              Already have an account?{' '}
+              <button
+                type="button"
+                onClick={() => setAuthMode('signin')}
+                className="text-[#2D6B8F] dark:text-[#7FB6D6] hover:underline font-semibold cursor-pointer"
+              >
+                Sign in with email
+              </button>
+            </>
+          )}
+        </div>
+        <div className="text-[11px]">
+          Want to mentor others instead?{' '}
+          <Link
+            to="/become-a-guide"
+            className="text-[#2D6B8F] dark:text-[#7FB6D6] hover:underline font-medium"
+          >
+            Become a Career Guide →
+          </Link>
+        </div>
       </footer>
 
       {/* Google Sign-In Modal */}

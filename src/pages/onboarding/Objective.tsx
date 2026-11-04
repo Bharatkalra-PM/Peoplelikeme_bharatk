@@ -1,8 +1,8 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { BrandMark } from '../../components/BrandMark';
-import { ArrowRight, Compass, RotateCcw, Users, LogOut } from 'lucide-react';
+import { ArrowRight, Compass, RotateCcw, LogOut } from 'lucide-react';
 import { ObjectiveType } from '../../types';
 
 export const Objective: React.FC = () => {
@@ -11,11 +11,7 @@ export const Objective: React.FC = () => {
 
   const handleSelect = (obj: ObjectiveType) => {
     setUserObjective(obj);
-    if (obj === 'become_guide') {
-      navigate('/become-a-guide');
-    } else {
-      navigate('/onboarding/story');
-    }
+    navigate('/onboarding/story');
   };
 
   return (
@@ -48,7 +44,7 @@ export const Objective: React.FC = () => {
             Choose your objective
           </h1>
           <p className="text-sm text-[#55665F] dark:text-[#A6B8B0]">
-            Tell us where you are in your career journey so we can set up the right path.
+            Tell us where you are in your career journey so we can match you with the right Career Guide and peer pod.
           </p>
         </div>
 
@@ -96,33 +92,17 @@ export const Objective: React.FC = () => {
             </div>
             <ArrowRight className="w-5 h-5 text-[#55665F] group-hover:text-[#102A2E] dark:group-hover:text-[#F2B134] shrink-0 transition-transform group-hover:translate-x-0.5" />
           </button>
-
-          {/* Option 3: I've made a switch and want to be a Career Guide */}
-          <button
-            type="button"
-            onClick={() => handleSelect('become_guide')}
-            className="w-full text-left bg-[#FFFFFF] dark:bg-[#0E1E1D] border border-[#D3DDD8] dark:border-[#2A403C] hover:border-[#102A2E] dark:hover:border-[#F2B134] rounded-2xl p-6 flex items-center justify-between gap-4 shadow-xs transition-all cursor-pointer group"
-          >
-            <div className="flex items-start gap-4">
-              <div className="w-11 h-11 rounded-full bg-[#2D6B8F]/10 text-[#2D6B8F] dark:text-[#7FB6D6] flex items-center justify-center shrink-0">
-                <Users className="w-5 h-5" />
-              </div>
-              <div className="space-y-1">
-                <h2 className="text-base font-semibold text-[#13231F] dark:text-[#E6EEEA]">
-                  I've made a switch and want to be a Career Guide
-                </h2>
-                <p className="text-xs text-[#55665F] dark:text-[#A6B8B0] leading-relaxed">
-                  Share what you learned with up to two people at a time (30 minutes a week for eight weeks).
-                </p>
-              </div>
-            </div>
-            <ArrowRight className="w-5 h-5 text-[#55665F] group-hover:text-[#102A2E] dark:group-hover:text-[#F2B134] shrink-0 transition-transform group-hover:translate-x-0.5" />
-          </button>
         </div>
       </main>
 
-      <footer className="max-w-2xl mx-auto w-full text-center text-xs text-[#55665F] dark:text-[#A6B8B0] py-4">
-        Privacy by default • You can change your objective at any time in Settings.
+      <footer className="max-w-2xl mx-auto w-full text-center text-xs text-[#55665F] dark:text-[#A6B8B0] py-4 space-y-1">
+        <p>Privacy by default • You can change your objective at any time in Settings.</p>
+        <p className="text-[11px]">
+          Already made a career transition and want to guide others?{' '}
+          <Link to="/become-a-guide" className="text-[#2D6B8F] dark:text-[#7FB6D6] hover:underline font-medium">
+            Apply on Become a Career Guide →
+          </Link>
+        </p>
       </footer>
     </div>
   );
