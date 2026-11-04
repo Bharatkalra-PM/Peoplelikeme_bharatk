@@ -65,8 +65,8 @@ export const GuideSpace: React.FC = () => {
       {/* Career Guide Identity Card */}
       <div className="bg-[#FFFFFF] dark:bg-[#0E1E1D] border border-[#D3DDD8] dark:border-[#2A403C] rounded-2xl p-6 space-y-4 shadow-xs">
         <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div className="flex items-center gap-3">
-            <InitialsAvatar firstName={guide.first_name} lastInitial={guide.last_initial} size="lg" />
+          <div className="flex items-center gap-3.5">
+            <InitialsAvatar firstName={guide.first_name} lastInitial={guide.last_initial} size="xl" />
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-base font-semibold text-[#13231F] dark:text-[#E6EEEA]">

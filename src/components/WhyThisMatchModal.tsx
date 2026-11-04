@@ -1,6 +1,7 @@
 import React from 'react';
 import { X, Compass, Users, CheckCircle2, Sparkles } from 'lucide-react';
 import { MoveProfile, Profile } from '../types';
+import { InitialsAvatar } from './InitialsAvatar';
 
 interface WhyThisMatchModalProps {
   isOpen: boolean;
@@ -87,8 +88,12 @@ export const WhyThisMatchModal: React.FC<WhyThisMatchModalProps> = ({
 
         {(mode === 'guide' || mode === 'both') && (
           <div className="space-y-3" data-testid="why-match-guide-section">
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#13231F] dark:text-[#E6EEEA]">
-              <Compass className="w-4 h-4 text-[#F2B134]" />
+            <div className="flex items-center gap-2.5 text-xs font-semibold uppercase tracking-wider text-[#13231F] dark:text-[#E6EEEA]">
+              <InitialsAvatar
+                firstName={guideProfile?.first_name || 'Arjun'}
+                lastInitial={guideProfile?.last_initial || 'K.'}
+                size="md"
+              />
               <span>
                 Why {guideProfile?.first_name || 'Arjun'} {guideProfile?.last_initial || 'K.'} is your Career Guide
               </span>
