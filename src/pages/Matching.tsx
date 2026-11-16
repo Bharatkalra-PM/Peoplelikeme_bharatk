@@ -1,15 +1,17 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BrandMark } from '../components/BrandMark';
+import { isPodsEnabled } from '../lib/pilotConfig';
 import { Loader2 } from 'lucide-react';
 
 export const Matching: React.FC = () => {
   const navigate = useNavigate();
+  const podsEnabled = isPodsEnabled();
 
   useEffect(() => {
     const timer = setTimeout(() => {
       navigate('/guides');
-    }, 1600);
+    }, 1200);
     return () => clearTimeout(timer);
   }, [navigate]);
 
@@ -26,10 +28,12 @@ export const Matching: React.FC = () => {
 
         <div className="space-y-2">
           <h1 className="font-heading text-2xl sm:text-3xl font-normal text-[#13231F] dark:text-[#E6EEEA]">
-            Finding your people
+            Finding your Career Guide
           </h1>
           <p className="text-sm text-[#55665F] dark:text-[#A6B8B0]">
-            Checking Career Guides who made your move and pods forming at your stage...
+            {podsEnabled
+              ? 'Checking Career Guides who made your move and pods forming at your stage...'
+              : 'Checking approved Career Guides who made your move 1–5 years ago...'}
           </p>
         </div>
 

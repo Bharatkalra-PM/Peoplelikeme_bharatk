@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { InitialsAvatar } from '../../components/InitialsAvatar';
@@ -53,7 +53,13 @@ export const SwitcherSummary: React.FC = () => {
   );
 
   const sortedMilestones = sprintPlan
-    ? [...sprintPlan.milestones].sort((a, b) => (a.week ?? (a as any).target_week ?? 1) - (b.week ?? (b as any).target_week ?? 1))
+    ? [...sprintPlan.milestones]
+        .slice(0, 5)
+        .sort(
+          (a, b) =>
+            Math.min(4, a.week ?? (a as any).target_week ?? 1) -
+            Math.min(4, b.week ?? (b as any).target_week ?? 1)
+        )
     : [];
 
   const handleAddMilestone = (e: React.FormEvent) => {
@@ -72,6 +78,8 @@ export const SwitcherSummary: React.FC = () => {
     setTimeout(() => setGoalSuggestedToast(false), 2000);
   };
 
+  const currentWeek = Math.min(4, Math.max(1, currentRhythm?.week || 1));
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between pb-2 border-b border-[#D3DDD8] dark:border-[#2A403C]">
@@ -83,15 +91,19 @@ export const SwitcherSummary: React.FC = () => {
           <span>Back to Career Guide hub</span>
         </Link>
         <span className="text-xs font-medium text-[#55665F] dark:text-[#A6B8B0]">
-          Switcher Plan & Pre-call Summary
+          Career Changer Plan &amp; Pre-call Summary
         </span>
       </div>
 
       <div className="bg-[#FFFFFF] dark:bg-[#0E1E1D] border border-[#D3DDD8] dark:border-[#2A403C] rounded-2xl p-6 sm:p-8 space-y-6 shadow-xs">
-        {/* Switcher header */}
+        {/* Career Changer header */}
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-3">
-            <InitialsAvatar firstName={currentUser?.role === "switcher" ? currentUser.first_name : "Bharat"} lastInitial={currentUser?.role === "switcher" ? currentUser.last_initial : "K."} size="lg" />
+            <InitialsAvatar
+              firstName={currentUser?.role === 'switcher' ? currentUser.first_name : 'Bharat'}
+              lastInitial={currentUser?.role === 'switcher' ? currentUser.last_initial : 'K.'}
+              size="lg"
+            />
             <div>
               <h1 className="text-lg font-semibold text-[#13231F] dark:text-[#E6EEEA]">
                 {currentUser?.role === 'switcher' ? currentUser.full_name : 'Bharat K.'}
@@ -104,7 +116,7 @@ export const SwitcherSummary: React.FC = () => {
           </div>
 
           <span className="text-xs px-3 py-1 rounded-full bg-[#102A2E]/10 dark:bg-[#0B1D20] text-[#102A2E] dark:text-[#E6EEEA] font-medium">
-            Week {currentRhythm?.week || 1} of 8
+            Week {currentWeek} of 4
           </span>
         </div>
 
@@ -149,20 +161,15 @@ export const SwitcherSummary: React.FC = () => {
         {/* Story */}
         <div className="space-y-1.5 text-xs">
           <h2 className="font-semibold text-[#55665F] dark:text-[#A6B8B0] uppercase text-[11px]">
-            Their Story & Move Context
+            Their Story &amp; Move Context
           </h2>
           <p className="text-[#13231F] dark:text-[#E6EEEA] leading-relaxed">
             {currentMoveProfile?.story ||
               'Spent 5 years closing enterprise software deals and solving customer friction; transitioning into full-time product management.'}
           </p>
-          {currentMoveProfile?.tried_so_far && (
-            <p className="text-[#55665F] dark:text-[#A6B8B0] pt-1">
-              <strong>Tried so far:</strong> {currentMoveProfile.tried_so_far}
-            </p>
-          )}
         </div>
 
-        {/* PILLAR 3: Career Guide Owns the 8-Week Plan & Milestones */}
+        {/* Career Guide Owns the 4-Week Plan & Milestones */}
         <div
           data-testid="guide-plan-editor"
           className="space-y-4 pt-4 border-t border-[#D3DDD8] dark:border-[#2A403C]"
@@ -171,10 +178,10 @@ export const SwitcherSummary: React.FC = () => {
             <div>
               <h2 className="text-xs font-semibold uppercase tracking-wider text-[#13231F] dark:text-[#E6EEEA] flex items-center gap-1.5">
                 <Flag className="w-3.5 h-3.5 text-[#F2B134]" />
-                <span>8-Week Milestones ({sprintPlan?.status === 'finalised' ? 'Finalised' : 'Draft'})</span>
+                <span>4-Week Milestones ({sprintPlan?.status === 'finalised' ? 'Finalised' : 'Draft'})</span>
               </h2>
               <p className="text-xs text-[#55665F] dark:text-[#A6B8B0] mt-0.5">
-                Add, remove, edit, and reorder milestones, then mark the plan Finalised.
+                Add, remove, edit, and reorder milestones across Weeks 1–4, then mark the plan Finalised.
               </p>
             </div>
 
@@ -182,7 +189,7 @@ export const SwitcherSummary: React.FC = () => {
               <button
                 type="button"
                 onClick={finaliseSprintPlan}
-                className="px-4 py-2 rounded-full bg-[#2F7D5B] hover:bg-[#25664a] text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs self-start sm:self-auto"
+                className="px-4 py-2 rounded-full bg-[#2F7D5B] hover:bg-[#25664a] text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs self-start sm:self-auto cursor-pointer"
               >
                 <Check className="w-3.5 h-3.5" />
                 <span>Mark Plan Finalised</span>
@@ -215,7 +222,7 @@ export const SwitcherSummary: React.FC = () => {
                       onChange={(e) => setEditingWeek(parseInt(e.target.value) || 1)}
                       className="px-2.5 py-1.5 rounded-lg border border-[#D3DDD8] dark:border-[#2A403C] bg-white dark:bg-[#0E1E1D] text-xs"
                     >
-                      {[1, 2, 3, 4, 5, 6, 7, 8].map((w) => (
+                      {[1, 2, 3, 4].map((w) => (
                         <option key={w} value={w}>
                           Week {w}
                         </option>
@@ -227,7 +234,7 @@ export const SwitcherSummary: React.FC = () => {
                         updateMilestone(m.id, { title: editingTitle, week: editingWeek });
                         setEditingMilestoneId(null);
                       }}
-                      className="px-3 py-1.5 rounded-full bg-[#102A2E] dark:bg-[#F2B134] text-white dark:text-[#102A2E] text-xs font-medium"
+                      className="px-3 py-1.5 rounded-full bg-[#102A2E] dark:bg-[#F2B134] text-white dark:text-[#102A2E] text-xs font-medium cursor-pointer"
                     >
                       Save
                     </button>
@@ -236,7 +243,7 @@ export const SwitcherSummary: React.FC = () => {
                   <>
                     <div className="space-y-0.5">
                       <span className="text-[10px] font-semibold uppercase tracking-wider text-[#8A5A00] dark:text-[#F2B134]">
-                        Week {m.week ?? (m as any).target_week ?? 1}
+                        Week {Math.min(4, m.week ?? (m as any).target_week ?? 1)} of 4
                       </span>
                       <p className="text-xs sm:text-sm font-medium text-[#13231F] dark:text-[#E6EEEA]">
                         {m.title}
@@ -248,7 +255,7 @@ export const SwitcherSummary: React.FC = () => {
                         type="button"
                         disabled={idx === 0}
                         onClick={() => reorderMilestone(m.id, 'up')}
-                        className="p-1.5 rounded-lg border border-[#D3DDD8] dark:border-[#2A403C] hover:bg-white dark:hover:bg-[#0E1E1D] disabled:opacity-40"
+                        className="p-1.5 rounded-lg border border-[#D3DDD8] dark:border-[#2A403C] hover:bg-white dark:hover:bg-[#0E1E1D] disabled:opacity-40 cursor-pointer"
                         title="Move up"
                       >
                         <ArrowUp className="w-3.5 h-3.5" />
@@ -257,7 +264,7 @@ export const SwitcherSummary: React.FC = () => {
                         type="button"
                         disabled={idx === sortedMilestones.length - 1}
                         onClick={() => reorderMilestone(m.id, 'down')}
-                        className="p-1.5 rounded-lg border border-[#D3DDD8] dark:border-[#2A403C] hover:bg-white dark:hover:bg-[#0E1E1D] disabled:opacity-40"
+                        className="p-1.5 rounded-lg border border-[#D3DDD8] dark:border-[#2A403C] hover:bg-white dark:hover:bg-[#0E1E1D] disabled:opacity-40 cursor-pointer"
                         title="Move down"
                       >
                         <ArrowDown className="w-3.5 h-3.5" />
@@ -267,9 +274,9 @@ export const SwitcherSummary: React.FC = () => {
                         onClick={() => {
                           setEditingMilestoneId(m.id);
                           setEditingTitle(m.title);
-                          setEditingWeek(m.week ?? (m as any).target_week ?? 1);
+                          setEditingWeek(Math.min(4, m.week ?? (m as any).target_week ?? 1));
                         }}
-                        className="p-1.5 rounded-lg border border-[#D3DDD8] dark:border-[#2A403C] hover:bg-white dark:hover:bg-[#0E1E1D]"
+                        className="p-1.5 rounded-lg border border-[#D3DDD8] dark:border-[#2A403C] hover:bg-white dark:hover:bg-[#0E1E1D] cursor-pointer"
                         title="Edit milestone"
                       >
                         <Edit3 className="w-3.5 h-3.5" />
@@ -277,7 +284,7 @@ export const SwitcherSummary: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => removeMilestone(m.id)}
-                        className="p-1.5 rounded-lg border border-[#D3DDD8] dark:border-[#2A403C] text-[#A8432C] dark:text-[#E58C73] hover:bg-white dark:hover:bg-[#0E1E1D]"
+                        className="p-1.5 rounded-lg border border-[#D3DDD8] dark:border-[#2A403C] text-[#A8432C] dark:text-[#E58C73] hover:bg-white dark:hover:bg-[#0E1E1D] cursor-pointer"
                         title="Remove milestone"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -303,7 +310,7 @@ export const SwitcherSummary: React.FC = () => {
               onChange={(e) => setNewMilestoneWeek(parseInt(e.target.value) || 4)}
               className="px-3 py-2 rounded-[10px] border border-[#D3DDD8] dark:border-[#2A403C] bg-[#F1F5F2]/40 dark:bg-[#122523]/40 text-xs"
             >
-              {[1, 2, 3, 4, 5, 6, 7, 8].map((w) => (
+              {[1, 2, 3, 4].map((w) => (
                 <option key={w} value={w}>
                   Target: Week {w}
                 </option>
@@ -311,7 +318,7 @@ export const SwitcherSummary: React.FC = () => {
             </select>
             <button
               type="submit"
-              className="px-4 py-2 rounded-full bg-[#102A2E] dark:bg-[#F2B134] text-white dark:text-[#102A2E] text-xs font-medium flex items-center justify-center gap-1"
+              className="px-4 py-2 rounded-full bg-[#102A2E] dark:bg-[#F2B134] text-white dark:text-[#102A2E] text-xs font-medium flex items-center justify-center gap-1 cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Add Milestone</span>
@@ -319,16 +326,16 @@ export const SwitcherSummary: React.FC = () => {
           </form>
         </div>
 
-        {/* PILLAR 3: Suggest Weekly Goals for the Switcher */}
+        {/* Suggest Weekly Goals for the Career Changer */}
         <div className="space-y-3 pt-4 border-t border-[#D3DDD8]/60 dark:border-[#2A403C]">
           <div className="flex items-center justify-between">
             <h2 className="text-xs font-semibold uppercase text-[#55665F] dark:text-[#A6B8B0] flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5 text-[#F2B134]" />
-              <span>Suggest Weekly Goals for Switcher</span>
+              <span>Suggest Weekly Goals for Career Changer</span>
             </h2>
             {goalSuggestedToast && (
               <span className="text-xs text-[#2F7D5B] dark:text-[#5FBF8F] font-medium">
-                âœ“ Suggested to switcher!
+                ✓ Suggested to career changer!
               </span>
             )}
           </div>
@@ -343,7 +350,7 @@ export const SwitcherSummary: React.FC = () => {
             />
             <button
               type="submit"
-              className="px-4 py-2 rounded-full bg-[#102A2E] dark:bg-[#F2B134] text-white dark:text-[#102A2E] text-xs font-medium shrink-0"
+              className="px-4 py-2 rounded-full bg-[#102A2E] dark:bg-[#F2B134] text-white dark:text-[#102A2E] text-xs font-medium shrink-0 cursor-pointer"
             >
               Suggest Goal
             </button>
@@ -364,7 +371,7 @@ export const SwitcherSummary: React.FC = () => {
         {/* Current Goals */}
         <div className="space-y-2.5 pt-2 border-t border-[#D3DDD8]/60 dark:border-[#2A403C]">
           <h2 className="text-xs font-semibold uppercase text-[#55665F] dark:text-[#A6B8B0]">
-            Switcherâ€™s Active Weekly Goals
+            Career Changer&apos;s Active Weekly Goals
           </h2>
           <div className="space-y-2">
             {goals.map((g) => (
@@ -392,7 +399,7 @@ export const SwitcherSummary: React.FC = () => {
 
         <div className="pt-2 flex justify-end">
           <a
-            href={sessions[0]?.video_url || '#'}
+            href={sessions[0]?.video_url || 'https://meet.jit.si/plm-guide-call'}
             target="_blank"
             rel="noopener noreferrer"
             className="px-6 py-2.5 rounded-full bg-[#102A2E] hover:bg-[#193d43] dark:bg-[#F2B134] dark:hover:bg-[#e0a32e] text-white dark:text-[#102A2E] text-xs font-medium flex items-center gap-2 shadow-xs"
@@ -405,5 +412,3 @@ export const SwitcherSummary: React.FC = () => {
     </div>
   );
 };
-
-

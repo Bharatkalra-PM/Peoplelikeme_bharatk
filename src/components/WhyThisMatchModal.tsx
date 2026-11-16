@@ -1,7 +1,8 @@
 import React from 'react';
-import { X, Compass, Users, CheckCircle2, Sparkles } from 'lucide-react';
+import { X, Users, CheckCircle2, Sparkles } from 'lucide-react';
 import { MoveProfile, Profile } from '../types';
 import { InitialsAvatar } from './InitialsAvatar';
+import { isPodsEnabled } from '../lib/pilotConfig';
 
 interface WhyThisMatchModalProps {
   isOpen: boolean;
@@ -28,6 +29,7 @@ export const WhyThisMatchModal: React.FC<WhyThisMatchModalProps> = ({
 }) => {
   if (!isOpen) return null;
 
+  const podsEnabled = isPodsEnabled();
   const fromField = userMove?.from_field || guideMove?.from_field || 'Sales & Operations';
   const fromRole = userMove?.from_role || 'B2B Sales Lead';
   const toRole = userMove?.to_role || guideMove?.to_role || 'Product Manager';
@@ -51,6 +53,8 @@ export const WhyThisMatchModal: React.FC<WhyThisMatchModalProps> = ({
     2,
     userYears - 1
   )} to ${userYears + 3} years of experience, mostly in ${city} or remote, and free on ${slot.toLowerCase()}.`;
+
+  const showPodSection = podsEnabled && (mode === 'pod' || mode === 'both');
 
   return (
     <div
@@ -86,7 +90,7 @@ export const WhyThisMatchModal: React.FC<WhyThisMatchModalProps> = ({
           </button>
         </div>
 
-        {(mode === 'guide' || mode === 'both') && (
+        {(mode === 'guide' || mode === 'both' || !podsEnabled) && (
           <div className="space-y-3" data-testid="why-match-guide-section">
             <div className="flex items-center gap-2.5 text-xs font-semibold uppercase tracking-wider text-[#13231F] dark:text-[#E6EEEA]">
               <InitialsAvatar
@@ -112,7 +116,7 @@ export const WhyThisMatchModal: React.FC<WhyThisMatchModalProps> = ({
           </div>
         )}
 
-        {(mode === 'pod' || mode === 'both') && (
+        {showPodSection && (
           <div className="space-y-2.5" data-testid="why-match-pod-section">
             <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#13231F] dark:text-[#E6EEEA]">
               <Users className="w-4 h-4 text-[#2D6B8F] dark:text-[#7FB6D6]" />

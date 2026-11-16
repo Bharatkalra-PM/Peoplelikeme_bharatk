@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { BrandMark } from '../../components/BrandMark';
@@ -147,7 +147,7 @@ export const BecomeAGuide: React.FC = () => {
             Become a Career Guide
           </h1>
           <p className="text-sm text-[#55665F] dark:text-[#A6B8B0]">
-            Help someone making the career move you navigated. 30 minutes a week for eight weeks, at most two people at a time.
+            Help someone making the career move you navigated. 30 minutes a week for four weeks, at most two career changers at a time.
           </p>
         </div>
 
@@ -474,7 +474,7 @@ export const BecomeAGuide: React.FC = () => {
                   className="mt-0.5 rounded border-[#D3DDD8] text-[#F2B134] focus:ring-[#F2B134]"
                 />
                 <span className="text-[#13231F] dark:text-[#E6EEEA]">
-                  <strong>I confirm the Career Guide commitment:</strong> 30 minutes a week for eight weeks, guiding at most two people at a time.
+                  <strong>I confirm the Career Guide commitment:</strong> 30 minutes a week for four weeks, guiding at most two career changers at a time.
                 </span>
               </label>
             </div>

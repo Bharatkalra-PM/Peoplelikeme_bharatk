@@ -31,6 +31,7 @@ import { GuideHome } from './pages/guide/GuideHome';
 import { SwitcherSummary } from './pages/guide/SwitcherSummary';
 import { ReachOut } from './pages/guide/ReachOut';
 import { AdminHub } from './pages/admin/AdminHub';
+import { AdminPilot } from './pages/admin/AdminPilot';
 import { DatabaseRecords } from './pages/DatabaseRecords';
 
 export default function App() {
@@ -67,7 +68,7 @@ export default function App() {
             <Route path="/pod/intro" element={<PodIntro />} />
             <Route path="/rhythm" element={<RhythmSetup />} />
 
-            {/* Active Sprint (Switcher Experience) */}
+            {/* Active 4-Week Pilot (Career Changer Experience) */}
             <Route path="/home" element={<Home />} />
             <Route path="/plan" element={<MyPlan />} />
             <Route path="/goals" element={<Goals />} />
@@ -76,15 +77,16 @@ export default function App() {
             <Route path="/wrap-up" element={<WrapUp />} />
             <Route path="/settings" element={<Settings />} />
 
-            {/* Guide Experience */}
+            {/* Career Guide Experience */}
             <Route path="/become-a-guide" element={<BecomeAGuide />} />
             <Route path="/guide-home" element={<GuideHome />} />
             <Route path="/guide-home/switchers" element={<GuideHome />} />
             <Route path="/guide-home/switcher/:id" element={<SwitcherSummary />} />
             <Route path="/guide-home/reach-out/:promptId" element={<ReachOut />} />
 
-            {/* Admin Hub */}
+            {/* Admin Hub & Pilot Go/No-Go */}
             <Route path="/admin" element={<AdminHub />} />
+            <Route path="/admin/pilot" element={<AdminPilot />} />
             <Route path="/database" element={<DatabaseRecords />} />
 
             {/* Catch-all redirect */}

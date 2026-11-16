@@ -49,6 +49,7 @@ const MERGED_PROMPTS: MergedPromptConfig[] = [
         label: 'Moving into',
         options: [
           'Product Manager',
+          'Business Analyst',
           'Product Designer',
           'Growth & Strategy',
           'Data & AI Product',
@@ -91,7 +92,7 @@ const MERGED_PROMPTS: MergedPromptConfig[] = [
   {
     key: 'tried_so_far',
     title: '3. What have you tried so far?',
-    helper: "We'll skip anything you've already completed when drafting your 8-week plan.",
+    helper: "We'll skip anything you've already completed when drafting your 4-week plan.",
     groups: [
       {
         groupKey: 'tried_chips',

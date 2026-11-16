@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { InitialsAvatar } from '../components/InitialsAvatar';
 import { WhyThisMatchModal } from '../components/WhyThisMatchModal';
+import { Month2OfferCard } from '../components/Month2OfferCard';
+import { isPodsEnabled } from '../lib/pilotConfig';
 import {
   CheckCircle,
   Circle,
@@ -19,7 +21,7 @@ import {
   Calendar,
 } from 'lucide-react';
 
-const DEFAULT_EIGHT_WEEK_ROADMAP: {
+const DEFAULT_FOUR_WEEK_ROADMAP: {
   week: number;
   phase: string;
   defaultTitle: string;
@@ -28,50 +30,26 @@ const DEFAULT_EIGHT_WEEK_ROADMAP: {
   {
     week: 1,
     phase: 'Foundation',
-    defaultTitle: 'Audit transferable skills & align 8-week plan with Career Guide',
-    guideFocus: '1:1 Guide Focus: Agree on your 8-week milestones & positioning story',
+    defaultTitle: 'Validate target role & align 4-week plan with your Career Guide',
+    guideFocus: '1:1 Guide Call: Agree on your 4-week milestones & positioning story',
   },
   {
     week: 2,
     phase: 'Positioning',
-    defaultTitle: 'Rewrite CV, LinkedIn & transition narrative for target role',
-    guideFocus: '1:1 Guide Focus: Line-by-line review of your transition narrative',
+    defaultTitle: 'Reframe CV, LinkedIn & transition narrative for hiring managers',
+    guideFocus: '1:1 Guide Call: Line-by-line review of your transition narrative & CV',
   },
   {
     week: 3,
-    phase: 'Target Map',
-    defaultTitle: 'Shortlist 25 target companies & warm outreach contacts',
-    guideFocus: '1:1 Guide Focus: Prioritise high-fit teams & referral paths',
+    phase: 'Proof & Outreach',
+    defaultTitle: 'Complete 1 practical role case study & shortlist 15 target teams',
+    guideFocus: '1:1 Guide Call: Critique your role artifact & warm outreach strategy',
   },
   {
     week: 4,
-    phase: 'Proof of Work',
-    defaultTitle: 'Build 1 role-specific portfolio artifact / case study',
-    guideFocus: '1:1 Guide Focus: Critique your case study or role artifact',
-  },
-  {
-    week: 5,
-    phase: 'Outreach',
-    defaultTitle: 'Complete 5 informational chats & warm introductions',
-    guideFocus: '1:1 Guide Focus: Refine outreach messages & conversation hooks',
-  },
-  {
-    week: 6,
-    phase: 'Mock Rounds',
-    defaultTitle: 'Run mock interview & story drills with Career Guide and Pod',
-    guideFocus: '1:1 Guide Focus: Live 30-min mock interview & feedback',
-  },
-  {
-    week: 7,
-    phase: 'Active Loop',
-    defaultTitle: 'Submit targeted applications & track hiring manager follow-ups',
-    guideFocus: '1:1 Guide Focus: Unblock interview pipeline & recruiter screens',
-  },
-  {
-    week: 8,
-    phase: 'Close & Land',
-    defaultTitle: 'Final-round prep, offer evaluation & next-step wrap-up',
-    guideFocus: '1:1 Guide Focus: Final round strategy, negotiation & 90-day plan',
+    phase: 'Mock & Next Step',
+    defaultTitle: 'Run live mock interview & story drill with your Career Guide',
+    guideFocus: '1:1 Guide Call: 30-min mock interview, feedback & Month 2 roadmap',
   },
 ];
 
@@ -91,8 +69,9 @@ export const Home: React.FC = () => {
     updateRhythmSchedule,
   } = useApp();
 
+  const podsEnabled = isPodsEnabled();
   const [whyMatchOpen, setWhyMatchOpen] = useState(false);
-  const [whyMatchMode, setWhyMatchMode] = useState<'guide' | 'pod' | 'both'>('both');
+  const [whyMatchMode, setWhyMatchMode] = useState<'guide' | 'pod' | 'both'>('guide');
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
   const [rescheduleSlot, setRescheduleSlot] = useState(
     currentRhythm?.guide_slot || 'Wednesdays 6:30 PM'
@@ -100,9 +79,9 @@ export const Home: React.FC = () => {
   const [activeMetricInfo, setActiveMetricInfo] = useState<
     'milestones' | 'goals' | 'sessions' | null
   >(null);
-  const [selectedWeekCard, setSelectedWeekCard] = useState<number>(
-    currentRhythm?.week || 1
-  );
+
+  const rawWeek = Math.min(4, Math.max(1, currentRhythm?.week || 1));
+  const [selectedWeekCard, setSelectedWeekCard] = useState<number>(rawWeek);
   const [goalsConfirmed, setGoalsConfirmed] = useState(false);
 
   // Before matching: single focused "Your next step" card
@@ -132,7 +111,7 @@ export const Home: React.FC = () => {
               Choose your Career Guide
             </h2>
             <p className="text-sm text-[#55665F] dark:text-[#A6B8B0] leading-relaxed">
-              We have matched your profile against people who have already made the move you are working toward. Review your closest matches and ask one to guide your 8-week sprint.
+              We have matched your profile against people who have already made the move you are working toward. Review your closest matches and ask one to guide your four-week pilot.
             </p>
           </div>
 
@@ -163,13 +142,13 @@ export const Home: React.FC = () => {
             Request sent. {requestedGuide.profile.first_name} will reply within 48 hours.
           </h1>
           <p className="text-sm text-[#55665F] dark:text-[#A6B8B0]">
-            If they can't, we'll offer your next best match automatically.
+            If they can&apos;t, we&apos;ll offer your next best match automatically.
           </p>
           <Link
             to="/request-sent"
             className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#102A2E] dark:bg-[#F2B134] text-white dark:text-[#102A2E] text-xs font-semibold"
           >
-            <span>View request & pod status</span>
+            <span>View request status</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
@@ -177,17 +156,16 @@ export const Home: React.FC = () => {
     );
   }
 
-  // Personal Progress Dashboard
-  const currentWeek = currentRhythm?.week || 1;
+  // Personal Progress Dashboard (4-Week Pilot)
+  const currentWeek = Math.min(4, Math.max(1, currentRhythm?.week || 1));
   const matchedGuideEntry =
     guidesList.find((g) => g.profile.id === currentRhythm?.guide_id) || guidesList[0];
   const matchedGuide = matchedGuideEntry.profile;
 
-  const existingMilestones = sprintPlan?.milestones || [];
-  // Build all 8 week cards by pairing each week (1..8) with any user milestone for that week or the structured 8-week roadmap default
-  const allEightWeekCards = DEFAULT_EIGHT_WEEK_ROADMAP.map((item) => {
+  const existingMilestones = (sprintPlan?.milestones || []).slice(0, 5);
+  const allFourWeekCards = DEFAULT_FOUR_WEEK_ROADMAP.map((item) => {
     const matchedMilestone = existingMilestones.find(
-      (m) => (m.week ?? (m as any).target_week ?? 1) === item.week
+      (m) => Math.min(4, m.week ?? (m as any).target_week ?? 1) === item.week
     );
     const isCompleted = matchedMilestone
       ? Boolean(matchedMilestone.completed)
@@ -203,31 +181,25 @@ export const Home: React.FC = () => {
     };
   });
 
-  const totalMilestones = existingMilestones.length || 6;
+  const totalMilestones = Math.min(5, Math.max(3, existingMilestones.length || 4));
   const completedMilestones =
     existingMilestones.filter((m) => m.completed).length ||
     (currentWeek > 1 ? 2 : 1);
 
   const doneGoalsCount = goals.filter((g) => g.status === 'done').length;
 
-  // Sessions breakdown: 1:1 Career Guide calls vs Pod sessions
-  const heldSessions = sessions.filter((s) => s.held === true);
-  const attendedSessionsCount =
-    heldSessions.length || Math.max(1, (currentWeek - 1) * 3 + 1);
-  const guideSessionsAttended =
-    heldSessions.filter((s) => s.kind === 'guide').length || Math.max(1, currentWeek);
-  const podSessionsAttended = Math.max(0, attendedSessionsCount - guideSessionsAttended);
+  const visibleSessions = podsEnabled
+    ? sessions
+    : sessions.filter((s) => s.kind === 'guide');
+  const heldCalls = visibleSessions.filter((s) => s.held === true);
+  const attendedCallsCount = heldCalls.length || Math.min(4, Math.max(1, currentWeek));
 
   const activeWeekObj =
-    allEightWeekCards.find((c) => c.week === selectedWeekCard) || allEightWeekCards[0];
+    allFourWeekCards.find((c) => c.week === selectedWeekCard) || allFourWeekCards[0];
 
-  const nextSession = sessions[0];
+  const nextSession = visibleSessions[0] || sessions[0];
   const nextSessionGuidingNote =
-    nextSession?.kind === 'guide'
-      ? 'Career Guide conversation: review your plan and next steps'
-      : nextSession?.kind === 'pod_checkin'
-      ? 'Pod check-in: 15 minutes, update your goals'
-      : 'Pod call: share one win and one struggle';
+    'Career Guide conversation: review your 4-week plan and next steps';
 
   const handleSaveReschedule = (e: React.FormEvent) => {
     e.preventDefault();
@@ -237,14 +209,14 @@ export const Home: React.FC = () => {
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto" data-testid="personal-progress-dashboard">
-      {/* Header: Week N of 8 + Career Guide & Pod Avatars + Why this match button */}
+      {/* Header: Week N of 4 + Career Guide Avatar + Why this match button */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#D3DDD8] dark:border-[#2A403C]">
         <div>
           <span className="text-[11px] font-semibold uppercase tracking-wider text-[#8A5A00] dark:text-[#F2B134]">
             Your Personal Progress Dashboard
           </span>
           <h1 className="font-heading text-2xl sm:text-3xl font-normal text-[#13231F] dark:text-[#E6EEEA]">
-            Week {currentWeek} of 8
+            Week {currentWeek} of 4
           </h1>
           <div className="flex items-center flex-wrap gap-3 mt-1.5">
             <Link
@@ -261,26 +233,14 @@ export const Home: React.FC = () => {
               </span>
             </Link>
 
-            <Link
-              to="/pod"
-              className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-[#FFFFFF] dark:bg-[#0E1E1D] border border-[#D3DDD8] dark:border-[#2A403C] hover:border-[#F2B134] text-xs font-medium text-[#13231F] dark:text-[#E6EEEA]"
-            >
-              <div className="flex items-center -space-x-1.5">
-                {(userPod?.members || [])
-                  .filter((m) => m.user_id !== currentUser?.id)
-                  .slice(0, 4)
-                  .map((m) => (
-                    <InitialsAvatar
-                      key={m.user_id}
-                      firstName={m.profile.first_name}
-                      lastInitial={m.profile.last_initial}
-                      size="sm"
-                      className="w-6 h-6 ring-1 ring-white dark:ring-[#0E1E1D]"
-                    />
-                  ))}
-              </div>
-              <span>{userPod?.name || 'Your Pod'}</span>
-            </Link>
+            {podsEnabled && (
+              <Link
+                to="/pod"
+                className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-[#FFFFFF] dark:bg-[#0E1E1D] border border-[#D3DDD8] dark:border-[#2A403C] hover:border-[#F2B134] text-xs font-medium text-[#13231F] dark:text-[#E6EEEA]"
+              >
+                <span>{userPod?.name || 'Your Pod'}</span>
+              </Link>
+            )}
           </div>
         </div>
 
@@ -288,7 +248,7 @@ export const Home: React.FC = () => {
           type="button"
           data-testid="dashboard-why-this-match-btn"
           onClick={() => {
-            setWhyMatchMode('both');
+            setWhyMatchMode(podsEnabled ? 'both' : 'guide');
             setWhyMatchOpen(true);
           }}
           className="self-start sm:self-auto px-3.5 py-1.5 rounded-full border border-[#D3DDD8] dark:border-[#2A403C] bg-[#FFFFFF] dark:bg-[#0E1E1D] hover:bg-[#F1F5F2] dark:hover:bg-[#122523] text-xs font-medium text-[#13231F] dark:text-[#E6EEEA] flex items-center gap-1.5 cursor-pointer"
@@ -298,7 +258,17 @@ export const Home: React.FC = () => {
         </button>
       </div>
 
-      {/* 3 Progress Metrics with Clear Descriptions & Info Icon Popovers */}
+      {/* Week 4 Month 2 Offer & End-of-Pilot Rating (Shown automatically in Week 4 or when Week 4 card is selected) */}
+      {(currentWeek === 4 || selectedWeekCard === 4) && (
+        <Month2OfferCard
+          userId={currentUser?.id || 'user-bharat-k'}
+          userName={currentUser?.full_name || `${currentUser?.first_name || 'Bharat'} ${currentUser?.last_initial || 'K.'}`}
+          userEmail={currentUser?.email || 'bharatk6325@gmail.com'}
+          guideName={`${matchedGuide.first_name} ${matchedGuide.last_initial}`}
+        />
+      )}
+
+      {/* 3 Progress Metrics: Milestones Reached, Goals This Week, Calls Attended */}
       <div className="space-y-2.5">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {/* Metric 1: Milestones Reached */}
@@ -319,7 +289,6 @@ export const Home: React.FC = () => {
                     )
                   }
                   aria-label="What does Milestones reached mean?"
-                  title="Milestones are set basis your 1:1 discussion with your Career Guide"
                   className="p-1 rounded-full hover:bg-[#F1F5F2] dark:hover:bg-[#122523] text-[#2D6B8F] dark:text-[#7FB6D6] cursor-pointer"
                 >
                   <Info className="w-3.5 h-3.5" />
@@ -330,7 +299,7 @@ export const Home: React.FC = () => {
               </p>
             </div>
             <p className="text-[11px] text-[#55665F] dark:text-[#A6B8B0] mt-2 leading-snug">
-              Basis your 1:1 discussion with Career Guide {matchedGuide.first_name} across your 8-week plan
+              Basis your 1:1 discussion with Career Guide {matchedGuide.first_name} across your 4-week plan
             </p>
           </div>
 
@@ -342,15 +311,14 @@ export const Home: React.FC = () => {
             <div>
               <div className="flex items-center justify-between gap-1">
                 <span className="text-xs font-semibold text-[#13231F] dark:text-[#E6EEEA]">
-                  Goals done this week
+                  Goals this week
                 </span>
                 <button
                   type="button"
                   onClick={() =>
                     setActiveMetricInfo(activeMetricInfo === 'goals' ? null : 'goals')
                   }
-                  aria-label="What does Goals done this week mean?"
-                  title="Weekly goals selected for your current week"
+                  aria-label="What does Goals this week mean?"
                   className="p-1 rounded-full hover:bg-[#F1F5F2] dark:hover:bg-[#122523] text-[#2D6B8F] dark:text-[#7FB6D6] cursor-pointer"
                 >
                   <Info className="w-3.5 h-3.5" />
@@ -361,11 +329,11 @@ export const Home: React.FC = () => {
               </p>
             </div>
             <p className="text-[11px] text-[#55665F] dark:text-[#A6B8B0] mt-2 leading-snug">
-              Selected weekly action items for Week {currentWeek} (shared with your Guide &amp; Pod)
+              Selected weekly action items for Week {currentWeek} (visible to your Career Guide)
             </p>
           </div>
 
-          {/* Metric 3: Sessions Attended */}
+          {/* Metric 3: Calls Attended */}
           <div
             data-testid="metric-sessions-attended"
             className="bg-[#FFFFFF] dark:bg-[#0E1E1D] border border-[#D3DDD8] dark:border-[#2A403C] rounded-2xl p-4 shadow-2xs flex flex-col justify-between"
@@ -373,7 +341,7 @@ export const Home: React.FC = () => {
             <div>
               <div className="flex items-center justify-between gap-1">
                 <span className="text-xs font-semibold text-[#13231F] dark:text-[#E6EEEA]">
-                  Sessions attended
+                  Calls attended
                 </span>
                 <button
                   type="button"
@@ -382,24 +350,23 @@ export const Home: React.FC = () => {
                       activeMetricInfo === 'sessions' ? null : 'sessions'
                     )
                   }
-                  aria-label="Which sessions are counted in Sessions attended?"
-                  title="Includes both 1:1 Career Guide sessions and Pod sessions"
+                  aria-label="Which calls are counted in Calls attended?"
                   className="p-1 rounded-full hover:bg-[#F1F5F2] dark:hover:bg-[#122523] text-[#2D6B8F] dark:text-[#7FB6D6] cursor-pointer"
                 >
                   <Info className="w-3.5 h-3.5" />
                 </button>
               </div>
               <p className="font-heading text-xl sm:text-2xl font-semibold text-[#13231F] dark:text-[#E6EEEA] mt-1">
-                {attendedSessionsCount} so far
+                {attendedCallsCount} of 4
               </p>
             </div>
             <p className="text-[11px] text-[#55665F] dark:text-[#A6B8B0] mt-2 leading-snug">
-              1:1 Guide + Pod sessions ({guideSessionsAttended} Guide 1:1 • {podSessionsAttended} Pod calls)
+              Weekly 30-minute 1:1 calls with Career Guide {matchedGuide.first_name}
             </p>
           </div>
         </div>
 
-        {/* Expandable Info Explanation Box when user clicks any Info icon */}
+        {/* Expandable Info Explanation Box */}
         {activeMetricInfo && (
           <div
             data-testid="metric-info-popover"
@@ -411,23 +378,23 @@ export const Home: React.FC = () => {
                 <div>
                   <p className="font-semibold">What &ldquo;Milestones reached&rdquo; means:</p>
                   <p className="text-[#55665F] dark:text-[#A6B8B0] mt-0.5 leading-relaxed">
-                    Milestones are your key 8-week transition checkpoints drafted and agreed based on your 1:1 discussion with your Career Guide ({matchedGuide.first_name}). Each week has a target milestone that you and your Career Guide review together.
+                    Milestones are your 3 to 5 key transition checkpoints drafted and agreed based on your 1:1 discussion with your Career Guide ({matchedGuide.first_name}) across your 4-week pilot.
                   </p>
                 </div>
               )}
               {activeMetricInfo === 'goals' && (
                 <div>
-                  <p className="font-semibold">What &ldquo;Goals done this week&rdquo; means:</p>
+                  <p className="font-semibold">What &ldquo;Goals this week&rdquo; means:</p>
                   <p className="text-[#55665F] dark:text-[#A6B8B0] mt-0.5 leading-relaxed">
-                    Weekly goals are the 2–3 concrete actions you select for the current week (either from your Career Guide&apos;s suggestions or your own focus). Mark them as Done, Partly, or Not yet and confirm them below.
+                    Weekly goals are the 2–3 concrete actions you select for the current week, visible to your Career Guide. Mark them as Done, Partly, or Not yet and confirm them below.
                   </p>
                 </div>
               )}
               {activeMetricInfo === 'sessions' && (
                 <div>
-                  <p className="font-semibold">Which sessions are counted in &ldquo;Sessions attended&rdquo;:</p>
+                  <p className="font-semibold">What &ldquo;Calls attended&rdquo; counts:</p>
                   <p className="text-[#55665F] dark:text-[#A6B8B0] mt-0.5 leading-relaxed">
-                    This counts both your <strong>1:1 Career Guide sessions</strong> (30-min weekly call with {matchedGuide.first_name}) and your <strong>Peer Pod sessions</strong> (30-min weekly Pod Call + 15-min mid-week Pod Check-in). Currently: <strong>{guideSessionsAttended} Career Guide 1:1</strong> and <strong>{podSessionsAttended} Pod session(s)</strong> attended.
+                    Tracks your weekly 30-minute 1:1 Career Guide calls with {matchedGuide.first_name} across the 4-week pilot.
                   </p>
                 </div>
               )}
@@ -444,7 +411,7 @@ export const Home: React.FC = () => {
         )}
       </div>
 
-      {/* All 8 Week Cards Available on Dashboard (Week 1 to Week 8) */}
+      {/* All 4 Week Cards Available on Dashboard (Week 1 to Week 4) */}
       <section
         data-testid="dashboard-all-week-cards"
         className="bg-[#FFFFFF] dark:bg-[#0E1E1D] border border-[#D3DDD8] dark:border-[#2A403C] rounded-2xl p-5 space-y-4 shadow-xs"
@@ -453,10 +420,10 @@ export const Home: React.FC = () => {
           <div>
             <h2 className="text-xs font-semibold uppercase tracking-wider text-[#55665F] dark:text-[#A6B8B0] flex items-center gap-1.5">
               <Calendar className="w-3.5 h-3.5 text-[#F2B134]" />
-              <span>Your 8-Week Sprint Plan — All 8 Week Cards</span>
+              <span>Your 4-Week Pilot Plan — All 4 Week Cards</span>
             </h2>
             <p className="text-[11px] text-[#55665F] dark:text-[#A6B8B0] mt-0.5">
-              Click any week card (Week 1 – Week 8) to view its milestone &amp; 1:1 Career Guide focus.
+              Click any week card (Week 1 – Week 4) to view its milestone &amp; 1:1 Career Guide focus. (Click Week 4 to view Month 2 offer.)
             </p>
           </div>
           <Link
@@ -467,9 +434,9 @@ export const Home: React.FC = () => {
           </Link>
         </div>
 
-        {/* Grid of all 8 Week Cards */}
+        {/* Grid of all 4 Week Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-          {allEightWeekCards.map((wkCard) => {
+          {allFourWeekCards.map((wkCard) => {
             const isSelected = wkCard.week === selectedWeekCard;
             return (
               <button
@@ -477,7 +444,7 @@ export const Home: React.FC = () => {
                 type="button"
                 data-testid={`dashboard-week-card-${wkCard.week}`}
                 onClick={() => setSelectedWeekCard(wkCard.week)}
-                className={`text-left p-3 rounded-xl border transition-all cursor-pointer flex flex-col justify-between gap-2 ${
+                className={`text-left p-3.5 rounded-xl border transition-all cursor-pointer flex flex-col justify-between gap-2 ${
                   isSelected
                     ? 'border-[#102A2E] dark:border-[#F2B134] bg-[#F2B134]/15 shadow-2xs ring-1 ring-[#102A2E]/20 dark:ring-[#F2B134]/40'
                     : wkCard.isCurrent
@@ -524,7 +491,7 @@ export const Home: React.FC = () => {
             <div className="space-y-1">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-[11px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[#102A2E] text-white dark:bg-[#F2B134] dark:text-[#102A2E]">
-                  Week {activeWeekObj.week} of 8 • {activeWeekObj.phase}
+                  Week {activeWeekObj.week} of 4 • {activeWeekObj.phase}
                 </span>
                 <span className="text-xs text-[#55665F] dark:text-[#A6B8B0]">
                   {activeWeekObj.guideFocus}
@@ -555,7 +522,7 @@ export const Home: React.FC = () => {
         )}
       </section>
 
-      {/* Next Session Card (with guiding note, Join active from 10m before, and Reschedule) */}
+      {/* Next Call Card (with guiding note, Join, and Reschedule up to 2h before) */}
       {nextSession && (
         <section
           data-testid="next-session-card"
@@ -564,7 +531,7 @@ export const Home: React.FC = () => {
           <div className="space-y-1">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-[10px] uppercase font-bold tracking-wider px-2.5 py-0.5 rounded-full bg-[#2F7D5B]/15 text-[#2F7D5B] dark:text-[#5FBF8F]">
-                Next session ({nextSession.kind === 'guide' ? '1:1 Career Guide' : 'Peer Pod'})
+                Next call (Weekly 30-min 1:1)
               </span>
               <span className="text-xs text-[#55665F] dark:text-[#A6B8B0]">
                 {new Date(nextSession.starts_at).toLocaleDateString('en-US', {
@@ -579,7 +546,7 @@ export const Home: React.FC = () => {
               {nextSessionGuidingNote}
             </h2>
             <p className="text-xs text-[#55665F] dark:text-[#A6B8B0]">
-              {nextSession.title} ({nextSession.duration_min} mins)
+              {nextSession.title} ({nextSession.duration_min} mins) • Reschedule up to 2 hours before
             </p>
           </div>
 
@@ -604,12 +571,12 @@ export const Home: React.FC = () => {
         </section>
       )}
 
-      {/* This Week's Goals (with direct status selection AND Confirm button) */}
+      {/* This Week's Goals (visible to Career Guide) */}
       <section className="bg-[#FFFFFF] dark:bg-[#0E1E1D] border border-[#D3DDD8] dark:border-[#2A403C] rounded-2xl p-5 space-y-4 shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
             <h2 className="text-xs font-semibold uppercase tracking-wider text-[#55665F] dark:text-[#A6B8B0]">
-              This week&apos;s goals (Selected basis your Career Guide plan)
+              This week&apos;s goals (Visible to your Career Guide)
             </h2>
             <p className="text-[11px] text-[#55665F] dark:text-[#A6B8B0] mt-0.5">
               Select what you have Done, Partly done, or Not yet done, then click Confirm Goals.
@@ -753,8 +720,11 @@ export const Home: React.FC = () => {
         )}
       </section>
 
-      {/* Three Clear 1-Tap Entry Points: My plan, My pod (with member photos), My Career Guide (with guide photo) */}
-      <section className="grid grid-cols-1 sm:grid-cols-3 gap-3" data-testid="dashboard-entry-points">
+      {/* 1-Tap Entry Points: My plan, My Career Guide (and My pod ONLY if podsEnabled) */}
+      <section
+        className={`grid grid-cols-1 ${podsEnabled ? 'sm:grid-cols-3' : 'sm:grid-cols-2'} gap-3`}
+        data-testid="dashboard-entry-points"
+      >
         <Link
           to="/plan"
           data-testid="entry-my-plan"
@@ -771,42 +741,33 @@ export const Home: React.FC = () => {
               My plan
             </h3>
             <p className="text-[11px] text-[#55665F] dark:text-[#A6B8B0] mt-0.5">
-              8-week milestones &amp; weekly calendar
+              4-week milestones &amp; weekly call calendar
             </p>
           </div>
         </Link>
 
-        <Link
-          to="/pod"
-          data-testid="entry-my-pod"
-          className="bg-[#FFFFFF] dark:bg-[#0E1E1D] border border-[#D3DDD8] dark:border-[#2A403C] hover:border-[#F2B134] rounded-2xl p-4 flex flex-col justify-between gap-3 transition-all shadow-2xs group"
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center -space-x-2">
-              {(userPod?.members || [])
-                .filter((m) => m.user_id !== currentUser?.id)
-                .slice(0, 4)
-                .map((m) => (
-                  <InitialsAvatar
-                    key={m.user_id}
-                    firstName={m.profile.first_name}
-                    lastInitial={m.profile.last_initial}
-                    size="sm"
-                    className="ring-2 ring-white dark:ring-[#0E1E1D]"
-                  />
-                ))}
+        {podsEnabled && (
+          <Link
+            to="/pod"
+            data-testid="entry-my-pod"
+            className="bg-[#FFFFFF] dark:bg-[#0E1E1D] border border-[#D3DDD8] dark:border-[#2A403C] hover:border-[#F2B134] rounded-2xl p-4 flex flex-col justify-between gap-3 transition-all shadow-2xs group"
+          >
+            <div className="flex items-center justify-between">
+              <div className="w-10 h-10 rounded-full bg-[#2D6B8F]/15 text-[#2D6B8F] dark:text-[#7FB6D6] flex items-center justify-center">
+                <Users className="w-4 h-4" />
+              </div>
+              <ArrowRight className="w-4 h-4 text-[#55665F] group-hover:translate-x-0.5 transition-transform" />
             </div>
-            <ArrowRight className="w-4 h-4 text-[#55665F] group-hover:translate-x-0.5 transition-transform" />
-          </div>
-          <div>
-            <h3 className="text-sm font-semibold text-[#13231F] dark:text-[#E6EEEA]">
-              My pod ({(userPod?.members || []).filter((m) => m.user_id !== currentUser?.id).length + 1} members)
-            </h3>
-            <p className="text-[11px] text-[#55665F] dark:text-[#A6B8B0] mt-0.5">
-              View pod member profiles &amp; share wins
-            </p>
-          </div>
-        </Link>
+            <div>
+              <h3 className="text-sm font-semibold text-[#13231F] dark:text-[#E6EEEA]">
+                My pod
+              </h3>
+              <p className="text-[11px] text-[#55665F] dark:text-[#A6B8B0] mt-0.5">
+                View pod member profiles &amp; share wins
+              </p>
+            </div>
+          </Link>
+        )}
 
         <Link
           to="/guide"
@@ -831,7 +792,7 @@ export const Home: React.FC = () => {
               My Career Guide
             </h3>
             <p className="text-[11px] text-[#55665F] dark:text-[#A6B8B0] mt-0.5">
-              1:1 with {matchedGuide.first_name} &amp; shared notes
+              1:1 with {matchedGuide.first_name}, weekly feedback &amp; shared notes
             </p>
           </div>
         </Link>
@@ -850,13 +811,13 @@ export const Home: React.FC = () => {
         podMembersCount={userPod?.members?.length || 5}
       />
 
-      {/* Quick Reschedule Modal */}
+      {/* Quick Reschedule Modal (up to 2 hours before) */}
       {showRescheduleModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
           <div className="w-full max-w-md bg-[#FFFFFF] dark:bg-[#0E1E1D] border border-[#D3DDD8] dark:border-[#2A403C] rounded-2xl p-6 space-y-4 shadow-xl">
             <div className="flex items-center justify-between pb-2 border-b border-[#D3DDD8] dark:border-[#2A403C]">
               <h3 className="font-heading text-lg text-[#13231F] dark:text-[#E6EEEA]">
-                Reschedule Session
+                Reschedule Weekly Call
               </h3>
               <button
                 type="button"
@@ -866,6 +827,9 @@ export const Home: React.FC = () => {
                 <X className="w-4 h-4" />
               </button>
             </div>
+            <p className="text-xs text-[#55665F] dark:text-[#A6B8B0]">
+              You can reschedule your 30-minute Career Guide call up to 2 hours before the scheduled start time.
+            </p>
             <form onSubmit={handleSaveReschedule} className="space-y-3 text-xs">
               <div className="space-y-1">
                 <label className="font-medium text-[#13231F] dark:text-[#E6EEEA]">

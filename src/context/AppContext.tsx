@@ -346,7 +346,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         id: 'gmsg-1',
         sender: 'guide',
         senderName: 'Arjun K.', sender_name: 'Arjun K.',
-        text: 'Hi! Excited to be your Career Guide for this 8-week sprint. I have reviewed your story and drafted 5 milestones for us. Letâ€™s review them in our first 30-min call!',
+        text: 'Hi! Excited to be your Career Guide for this 4-week pilot. I have reviewed your story and drafted 5 milestones for us. Letâ€™s review them in our first 30-min call!',
         createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
       },
     ])
@@ -410,7 +410,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         1: [
           'Confirm the first Career Guide conversation',
           'Set this weekâ€™s goals',
-          'Introduce yourself to your pod',
+          'Draft 3 transferable impact stories from your current role',
         ],
       },
       updated_at: new Date().toISOString(),
@@ -428,7 +428,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         starts_at: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
         duration_min: 30,
         video_url: generateJitsiUrl('guide', 'g-1'),
-        agenda: 'Introductions, validating target roles, finalising your 8-week plan',
+        agenda: 'Introductions, validating target roles, finalising your 4-week plan',
         held: null,
         title: 'Career Guide conversation with Arjun K.',
         with_name: 'Arjun K.',
@@ -730,7 +730,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const week1Goals = [
         'Confirm the first Career Guide conversation',
         'Set this week’s goals',
-        'Introduce yourself to your pod',
+        'Draft 3 transferable impact stories from your current role',
       ];
       setSprintPlan({
         id: `plan-${Date.now()}`,
@@ -1269,7 +1269,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setDemoToast({
       title: 'Check-In Nudge ("Slip") Triggered',
       message:
-        'When a switcher misses weekly goals or goes quiet for 7 days, their Career Guide and Pod get a gentle human check-in prompt (never an automated bot message).',
+        'When a career changer misses weekly goals or goes quiet for 7 days, their Career Guide and Pod get a gentle human check-in prompt (never an automated bot message).',
       linkTo: '/guide-home/reach-out/prompt-demo-slip',
       linkLabel: 'Open Career Guide Check-in Screen',
     });
@@ -1289,23 +1289,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       };
       setCurrentRhythm(fallbackRhythm);
       setDemoToast({
-        title: 'Advanced Sprint to Week 2 of 8',
-        message: 'Your 8-week sprint is now in Week 2 of 8.',
+        title: 'Advanced Sprint to Week 2 of 4',
+        message: 'Your 4-week pilot is now in Week 2 of 4.',
         linkTo: '/home',
         linkLabel: 'Go to Week 2 Dashboard',
       });
       return;
     }
-    const nextWeek = Math.min(8, currentRhythm.week + 1);
+    const nextWeek = (currentRhythm.week >= 4 ? 1 : currentRhythm.week + 1);
     setCurrentRhythm({ ...currentRhythm, week: nextWeek });
     setDemoToast({
-      title: `Advanced Sprint to Week ${nextWeek} of 8`,
+      title: `Advanced Sprint to Week ${nextWeek} of 4`,
       message:
-        nextWeek === 8
-          ? 'You have reached Week 8 of 8! You can now complete the 8-Week Wrap-up or mark your role as landed.'
-          : `Your sprint timeline and weekly goals have rolled forward to Week ${nextWeek} of 8.`,
-      linkTo: nextWeek === 8 ? '/wrap-up' : '/home',
-      linkLabel: nextWeek === 8 ? 'Open 8-Week Wrap-Up' : `View Week ${nextWeek} Plan`,
+        nextWeek === 4
+          ? 'You have reached Week 8 of 4! You can now complete the 4-Week Wrap-up or mark your role as landed.'
+          : `Your sprint timeline and weekly goals have rolled forward to Week ${nextWeek} of 4.`,
+      linkTo: nextWeek === 4 ? '/wrap-up' : '/home',
+      linkLabel: nextWeek === 4 ? 'Open 4-Week Wrap-Up' : `View Week ${nextWeek} Plan`,
     });
   };
 

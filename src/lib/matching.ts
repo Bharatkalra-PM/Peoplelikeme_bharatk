@@ -39,14 +39,14 @@ export function isNewGuide(profile: Pick<Profile, 'ratings_count'>): boolean {
 }
 
 /**
- * Calculates the current sprint week (1 to 8) rolling over automatically every 7 days from start_date.
+ * Calculates the current pilot week (1 to 4) rolling over automatically every 7 days from start_date.
  */
 export function calculateCurrentWeek(startDateIso: string, nowMs: number = Date.now()): number {
   const parsed = new Date(startDateIso).getTime();
   if (Number.isNaN(parsed)) return 1;
   const diffMs = Math.max(0, nowMs - parsed);
   const weeksElapsed = Math.floor(diffMs / (7 * 24 * 60 * 60 * 1000));
-  return Math.min(8, Math.max(1, weeksElapsed + 1));
+  return Math.min(4, Math.max(1, weeksElapsed + 1));
 }
 
 // Canonical role normalization to catch common abbreviations
@@ -84,7 +84,12 @@ export function normalizeRole(role: string): string {
   ) {
     return 'sales';
   }
-  if (lower.includes('data') || lower.includes('analyst') || lower.includes('analytics')) {
+  if (
+    lower.includes('business analyst') ||
+    lower.includes('data') ||
+    lower.includes('analyst') ||
+    lower.includes('analytics')
+  ) {
     return 'data analyst';
   }
   if (lower.includes('consulting') || lower.includes('consultant')) {
@@ -93,40 +98,46 @@ export function normalizeRole(role: string): string {
   if (lower.includes('marketing') || lower.includes('growth')) {
     return 'growth marketer';
   }
-  if (lower.includes('operations') || lower.includes('strategy') || lower.includes('ops')) {
+  if (
+    lower.includes('operations') ||
+    lower.includes('strategy') ||
+    lower.includes('ops') ||
+    lower.includes('customer success')
+  ) {
     return 'operations';
   }
   return lower;
 }
 
 /**
- * Matches switcher against Career Guide candidates on industry, role, experience,
+ * Matches career changer against Career Guide candidates on industry, role, experience,
  * starting point, city, availability, constraints and (only if the user chose it) gender.
  */
 export function calculateMatchScore(
-  switcher: MoveProfile,
+  changer: MoveProfile,
   guide: MoveProfile,
-  switcherCity: string = '',
+  changerCity: string = '',
   guideCity: string = '',
   guideGender?: 'Female' | 'Male' | 'Non-binary'
 ): { score: number; diffNotes: string[]; defaultReason: string } {
-  const normSwitcherFrom = normalizeRole(switcher.from_role);
-  const normSwitcherTo = normalizeRole(switcher.to_role);
+  const normChangerFrom = normalizeRole(changer.from_role);
+  const normChangerTo = normalizeRole(changer.to_role);
   const normGuideFrom = normalizeRole(guide.from_role);
   const normGuideTo = normalizeRole(guide.to_role);
 
   // 1. Role & Industry Move similarity (0.35)
   let moveSimilarity = 0;
-  if (normSwitcherFrom === normGuideFrom && normSwitcherTo === normGuideTo) {
+  if (normChangerFrom === normGuideFrom && normChangerTo === normGuideTo) {
     moveSimilarity = 1.0;
-  } else if (normSwitcherTo === normGuideTo) {
+  } else if (normChangerTo === normGuideTo) {
     moveSimilarity = 0.72;
-  } else if (normSwitcherFrom === normGuideFrom) {
+  } else if (normChangerFrom === normGuideFrom) {
     moveSimilarity = 0.55;
   } else if (
-    (normSwitcherTo.includes('product') && normGuideTo.includes('product')) ||
-    (normSwitcherTo.includes('design') && normGuideTo.includes('design')) ||
-    (normSwitcherTo.includes('engineer') && normGuideTo.includes('engineer'))
+    (normChangerTo.includes('product') && normGuideTo.includes('product')) ||
+    (normChangerTo.includes('design') && normGuideTo.includes('design')) ||
+    (normChangerTo.includes('engineer') && normGuideTo.includes('engineer')) ||
+    (normChangerTo.includes('analyst') && normGuideTo.includes('product'))
   ) {
     moveSimilarity = 0.6;
   } else {
@@ -135,20 +146,20 @@ export function calculateMatchScore(
 
   // Industry bonus if from_field matches
   if (
-    switcher.from_field &&
+    changer.from_field &&
     guide.from_field &&
-    switcher.from_field.toLowerCase().trim() === guide.from_field.toLowerCase().trim()
+    changer.from_field.toLowerCase().trim() === guide.from_field.toLowerCase().trim()
   ) {
     moveSimilarity = Math.min(1.0, moveSimilarity + 0.15);
   }
 
   // 2. Starting point & experience (0.25)
-  const yearsDiff = Math.abs((switcher.years_experience || 0) - (guide.years_experience || 0));
+  const yearsDiff = Math.abs((changer.years_experience || 0) - (guide.years_experience || 0));
   let startingPoint = 1 - Math.min(yearsDiff, 10) / 10;
   if (
-    switcher.from_company_type &&
+    changer.from_company_type &&
     guide.from_company_type &&
-    switcher.from_company_type.toLowerCase() === guide.from_company_type.toLowerCase()
+    changer.from_company_type.toLowerCase() === guide.from_company_type.toLowerCase()
   ) {
     startingPoint = Math.min(1.0, startingPoint + 0.2);
   }
@@ -157,25 +168,29 @@ export function calculateMatchScore(
   let totalConstraintsChecks = 0;
   let constraintsMatches = 0;
 
-  if (switcher.dependants && guide.dependants) {
+  if (changer.dependants && guide.dependants) {
     totalConstraintsChecks += 1;
-    if (switcher.dependants.toLowerCase() === guide.dependants.toLowerCase()) {
+    if (changer.dependants.toLowerCase() === guide.dependants.toLowerCase()) {
       constraintsMatches += 1;
     }
   }
 
-  if (switcher.priority && guide.priority) {
+  if (changer.priority && guide.priority) {
     totalConstraintsChecks += 1;
-    const sPrio = switcher.priority.toLowerCase().split('(')[0].trim();
+    const sPrio = changer.priority.toLowerCase().split('(')[0].trim();
     const gPrio = guide.priority.toLowerCase().split('(')[0].trim();
-    if (sPrio === gPrio || switcher.priority.toLowerCase().includes(gPrio) || guide.priority.toLowerCase().includes(sPrio)) {
+    if (
+      sPrio === gPrio ||
+      changer.priority.toLowerCase().includes(gPrio) ||
+      guide.priority.toLowerCase().includes(sPrio)
+    ) {
       constraintsMatches += 1;
     }
   }
 
-  if (switcher.constraints?.length || guide.constraints?.length) {
+  if (changer.constraints?.length || guide.constraints?.length) {
     totalConstraintsChecks += 1;
-    const sSet = new Set((switcher.constraints || []).map((c) => c.toLowerCase()));
+    const sSet = new Set((changer.constraints || []).map((c) => c.toLowerCase()));
     const gSet = new Set((guide.constraints || []).map((c) => c.toLowerCase()));
     const common = [...sSet].filter((x) => gSet.has(x));
     if (common.length > 0) {
@@ -188,15 +203,15 @@ export function calculateMatchScore(
 
   // 4. Same city or remote (0.10)
   const isCityMatch =
-    Boolean(switcherCity && guideCity) &&
-    (switcherCity.toLowerCase() === guideCity.toLowerCase() ||
-      switcherCity.toLowerCase().includes('remote') ||
+    Boolean(changerCity && guideCity) &&
+    (changerCity.toLowerCase() === guideCity.toLowerCase() ||
+      changerCity.toLowerCase().includes('remote') ||
       guideCity.toLowerCase().includes('remote'));
   const sameCityOrRemote = isCityMatch ? 1.0 : 0.2;
 
   // 5. Availability overlap (0.10)
   const normalizeSlot = (s: string) => s.toLowerCase().split('(')[0].trim();
-  const sAvail = new Set((switcher.availability || []).map(normalizeSlot));
+  const sAvail = new Set((changer.availability || []).map(normalizeSlot));
   const gAvail = new Set((guide.availability || []).map(normalizeSlot));
   const sharedAvail = [...sAvail].filter((a) => gAvail.has(a));
   const availabilityOverlap =
@@ -211,11 +226,11 @@ export function calculateMatchScore(
 
   // 6. Optional Gender preference (only if the user chose it)
   if (
-    switcher.preferred_guide_gender &&
-    switcher.preferred_guide_gender !== 'No preference' &&
+    changer.preferred_guide_gender &&
+    changer.preferred_guide_gender !== 'No preference' &&
     guideGender
   ) {
-    if (switcher.preferred_guide_gender === guideGender) {
+    if (changer.preferred_guide_gender === guideGender) {
       rawScore = Math.min(1.0, rawScore + 0.08);
     } else {
       rawScore = Math.max(0, rawScore - 0.15);
@@ -226,34 +241,34 @@ export function calculateMatchScore(
 
   // Build differences notes for comparison state
   const diffNotes: string[] = [];
-  if (normSwitcherFrom !== normGuideFrom) {
-    diffNotes.push(`Moved from ${guide.from_role} rather than ${switcher.from_role}`);
+  if (normChangerFrom !== normGuideFrom) {
+    diffNotes.push(`Moved from ${guide.from_role} rather than ${changer.from_role}`);
   }
   if (yearsDiff > 3) {
     diffNotes.push(
-      `${guide.years_experience} years prior experience vs your ${switcher.years_experience}`
+      `${guide.years_experience} years prior experience vs your ${changer.years_experience}`
     );
   }
-  if (switcher.dependants !== guide.dependants && guide.dependants) {
+  if (changer.dependants !== guide.dependants && guide.dependants) {
     diffNotes.push(`Different family setup (${guide.dependants})`);
   }
-  if (switcherCity && guideCity && switcherCity.toLowerCase() !== guideCity.toLowerCase()) {
-    diffNotes.push(`Based in ${guideCity} vs ${switcherCity}`);
+  if (changerCity && guideCity && changerCity.toLowerCase() !== guideCity.toLowerCase()) {
+    diffNotes.push(`Based in ${guideCity} vs ${changerCity}`);
   }
 
   // Plain 1-sentence under 20 words match reason using only shared profile facts
   let defaultReason = '';
   if (guide.went_back) {
-    defaultReason = `Both moved from ${switcher.from_role} into ${guide.to_role}; later returned to ${guide.from_role}.`;
-  } else if (normSwitcherFrom === normGuideFrom && normSwitcherTo === normGuideTo) {
+    defaultReason = `Both moved from ${changer.from_role} into ${guide.to_role}; later returned to ${guide.from_role}.`;
+  } else if (normChangerFrom === normGuideFrom && normChangerTo === normGuideTo) {
     const cleanPrio = (guide.priority || 'speed to role').split('(')[0].trim().toLowerCase();
-    if (switcher.priority && switcher.priority.toLowerCase().includes(cleanPrio)) {
+    if (changer.priority && changer.priority.toLowerCase().includes(cleanPrio)) {
       defaultReason = `Both made this exact move with the same focus on ${cleanPrio}.`;
     } else {
-      defaultReason = `Both moved from ${switcher.from_role} into ${switcher.to_role} with similar background.`;
+      defaultReason = `Both moved from ${changer.from_role} into ${changer.to_role} with similar background.`;
     }
-  } else if (normSwitcherTo === normGuideTo) {
-    defaultReason = `Both navigated the transition into ${switcher.to_role} with similar years of experience.`;
+  } else if (normChangerTo === normGuideTo) {
+    defaultReason = `Both navigated the transition into ${changer.to_role} with similar years of experience.`;
   } else {
     defaultReason = `Shared background in ${guide.from_role} and similar work constraints.`;
   }
@@ -269,14 +284,13 @@ export function calculateMatchScore(
 
 /**
  * Filter & rank Career Guides:
- * - Only approved Career Guides (verified, active, < 2 active switchers, years_since_move 1-5)
+ * - Only approved Career Guides (verified, active, < 2 active career changers, years_since_move 1-5)
  * - Show 3 to 5 approved Career Guides (never more than 5)
  * - At most one "New" guide (fewer than 3 ratings) per set
- * - Never mix sample people with real ones when demoMode filter is applied
  */
 export function rankGuides(
-  switcher: MoveProfile,
-  switcherCity: string,
+  changer: MoveProfile,
+  changerCity: string,
   guidePool: { profile: Profile; move_profile: MoveProfile; active_switchers_count?: number }[],
   options?: {
     demoMode?: boolean;
@@ -291,7 +305,7 @@ export function rankGuides(
   const maxResults = Math.min(5, Math.max(3, options?.maxResults ?? 5));
   const excludeSet = new Set(options?.excludeGuideIds || []);
 
-  // Filter eligible approved Career Guides
+  // Filter eligible approved Career Guides (strictly < 2 active career changers)
   const eligible = guidePool.filter((g) => {
     if (excludeSet.has(g.profile.id)) return false;
     const isApproved =
@@ -300,26 +314,24 @@ export function rankGuides(
       (!g.profile.application_status || g.profile.application_status === 'approved');
     if (!isApproved) return false;
 
-    // Never mix sample profiles with real ones when demoMode is explicitly passed
     if (typeof options?.demoMode === 'boolean') {
       const isSample = Boolean(g.profile.is_sample);
       if (options.demoMode !== isSample) return false;
     }
 
-    // If user explicitly chose a gender preference and there are matching guides, filter to preferred gender
-    const switchers = g.active_switchers_count ?? 0;
+    const activeChangersCount = g.active_switchers_count ?? 0;
     const yearsSince = g.move_profile.years_since_move ?? 2;
-    return switchers < 2 && yearsSince >= 1 && yearsSince <= 5;
+    return activeChangersCount < 2 && yearsSince >= 1 && yearsSince <= 5;
   });
 
   // Check if user has a strict gender filter that can be satisfied
   let poolToScore = eligible;
   if (
-    switcher.preferred_guide_gender &&
-    switcher.preferred_guide_gender !== 'No preference'
+    changer.preferred_guide_gender &&
+    changer.preferred_guide_gender !== 'No preference'
   ) {
     const genderFiltered = eligible.filter(
-      (g) => g.profile.gender === switcher.preferred_guide_gender
+      (g) => g.profile.gender === changer.preferred_guide_gender
     );
     if (genderFiltered.length > 0) {
       poolToScore = genderFiltered;
@@ -328,9 +340,9 @@ export function rankGuides(
 
   const scored: GuideCandidate[] = poolToScore.map((g) => {
     const { score, diffNotes, defaultReason } = calculateMatchScore(
-      switcher,
+      changer,
       g.move_profile,
-      switcherCity,
+      changerCity,
       g.profile.city,
       g.profile.gender
     );
@@ -357,9 +369,7 @@ export function rankGuides(
     return (b.profile.rating_avg ?? 4.8) - (a.profile.rating_avg ?? 4.8);
   });
 
-  // Filter candidates clearing minimum match threshold (0.48)
-  // Also ensure the target role is at least somewhat related if user typed a completely unknown role like "Astronaut"
-  const normTarget = normalizeRole(switcher.to_role);
+  const normTarget = normalizeRole(changer.to_role);
   const knownTargets = [
     'product manager',
     'software engineer',
@@ -391,7 +401,6 @@ export function rankGuides(
     };
   }
 
-  // Enforce "At most one 'New' guide per set" (fewer than 3 ratings) and max 5 results
   const selected: GuideCandidate[] = [];
   let newGuideIncluded = false;
 
@@ -399,7 +408,7 @@ export function rankGuides(
     if (selected.length >= maxResults) break;
     const candidateIsNew = isNewGuide(candidate.profile);
     if (candidateIsNew) {
-      if (newGuideIncluded) continue; // Skip additional "New" guides
+      if (newGuideIncluded) continue;
       newGuideIncluded = true;
     }
     selected.push(candidate);
@@ -413,7 +422,7 @@ export function rankGuides(
 }
 
 /**
- * Drafts 4 to 6 personal milestones across the 8-week sprint from the user's profile,
+ * Drafts 3 to 5 personal milestones across the 4-week pilot from the user's profile,
  * skipping anything already done (e.g. if CV is already rewritten, skip CV milestone).
  */
 export function draftPersonalMilestones(
@@ -448,7 +457,7 @@ export function draftPersonalMilestones(
       id: 'ms-1',
       week: 1,
       title: `Validate target ${targetRole} roles & map transferable strengths from ${fromRole}`,
-      description: 'Align with your Career Guide on target company stages and role expectations.',
+      description: 'Align with your Career Guide on target company stages and 4-week focus.',
       completed: false,
     },
   ];
@@ -474,36 +483,28 @@ export function draftPersonalMilestones(
   if (!portfolioAlreadyBuilt) {
     milestones.push({
       id: 'ms-3',
-      week: 4,
-      title: `Complete 2 practical ${targetRole} case studies / tear-downs`,
-      description: 'Build tangible proof-of-work artifacts to share in warm outreach and interviews.',
+      week: 3,
+      title: `Complete 1 practical ${targetRole} case study / teardown & warm outreach`,
+      description: 'Build tangible proof-of-work to share in warm outreach and interviews.',
+      completed: false,
+    });
+  } else {
+    milestones.push({
+      id: 'ms-3-alt',
+      week: 3,
+      title: 'Run 5 warm informational conversations & referral requests',
+      description: 'Speak with hiring peers and alumni who transitioned from similar backgrounds.',
       completed: false,
     });
   }
 
-  milestones.push(
-    {
-      id: 'ms-4',
-      week: 5,
-      title: 'Run 6 warm informational conversations & referral requests',
-      description: 'Speak with hiring peers and alumni who transitioned from similar backgrounds.',
-      completed: false,
-    },
-    {
-      id: 'ms-5',
-      week: 7,
-      title: `Mock interviews & live ${targetRole} case drills with Career Guide`,
-      description: 'Practice behavioural storytelling and structured problem solving under time.',
-      completed: false,
-    },
-    {
-      id: 'ms-6',
-      week: 8,
-      title: 'Active interview loop conversion & offer negotiation readiness',
-      description: 'Review feedback from first-round screens and calibrate final positioning.',
-      completed: false,
-    }
-  );
+  milestones.push({
+    id: 'ms-4',
+    week: 4,
+    title: `Mock interview & live ${targetRole} story drill with your Career Guide`,
+    description: 'Practice behavioural storytelling, structured problem solving, and next-step readiness.',
+    completed: false,
+  });
 
-  return milestones.slice(0, 6);
+  return milestones.slice(0, 5);
 }

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
+import { isPodsEnabled } from '../lib/pilotConfig';
 import {
   CheckCircle,
   Circle,
@@ -25,6 +26,8 @@ export const Goals: React.FC = () => {
   } = useApp();
 
   const navigate = useNavigate();
+  const podsEnabled = isPodsEnabled();
+  const currentWeek = Math.min(4, Math.max(1, currentRhythm?.week || 1));
 
   const [isEditing, setIsEditing] = useState(goals.length === 0);
   const [goalTexts, setGoalTexts] = useState<string[]>(() => {
@@ -32,7 +35,7 @@ export const Goals: React.FC = () => {
     return [
       'Confirm the first Career Guide conversation',
       'Set this week’s goals',
-      'Introduce yourself to your pod',
+      'Draft 3 transferable impact stories from current role',
     ];
   });
   const [sharedWinId, setSharedWinId] = useState<string | null>(null);
@@ -76,10 +79,10 @@ export const Goals: React.FC = () => {
             <span>Back to Dashboard</span>
           </Link>
           <h1 className="font-heading text-2xl sm:text-3xl font-normal text-[#13231F] dark:text-[#E6EEEA]">
-            Week {currentRhythm?.week || 1} of 8 Goals
+            Week {currentWeek} of 4 Goals
           </h1>
           <p className="text-xs sm:text-sm text-[#55665F] dark:text-[#A6B8B0] mt-0.5">
-            Select your weekly goals based on your Career Guide discussion, update what is Done / Partly / Not yet, and confirm to save.
+            Two or three focus items for this week. Visible to your Career Guide{podsEnabled ? ' and pod' : ' only'}.
           </p>
         </div>
 
@@ -101,7 +104,7 @@ export const Goals: React.FC = () => {
       <div className="p-3.5 rounded-xl bg-[#2D6B8F]/10 border border-[#2D6B8F]/30 flex items-start gap-2.5 text-xs text-[#13231F] dark:text-[#E6EEEA]">
         <Info className="w-4 h-4 text-[#2D6B8F] dark:text-[#7FB6D6] shrink-0 mt-0.5" />
         <div>
-          <span className="font-semibold">How Week&apos;s Goals work:</span> Your weekly goals are selected based on your 1:1 discussion with your Career Guide. Mark each goal as <strong>Done</strong>, <strong>Partly</strong>, or <strong>Not yet</strong> below, then click <strong>Confirm &amp; Return to Dashboard</strong>.
+          <span className="font-semibold">How Week&apos;s Goals work:</span> Your weekly goals are selected based on your 1:1 discussion with your Career Guide. Mark each goal as <strong>Done</strong>, <strong>Partly</strong>, or <strong>Not yet</strong> below, then click <strong>Confirm &amp; Back to Dashboard</strong>.
         </div>
       </div>
 
@@ -153,7 +156,7 @@ export const Goals: React.FC = () => {
                       }}
                       className="px-3 py-1.5 rounded-full bg-[#102A2E] dark:bg-[#F2B134] text-white dark:text-[#102A2E] text-xs font-medium cursor-pointer"
                     >
-                      Save & Accept
+                      Save &amp; Accept
                     </button>
                   </div>
                 ) : (
@@ -205,7 +208,7 @@ export const Goals: React.FC = () => {
             Set your 2–3 goals for this week
           </h2>
           <p className="text-xs text-[#55665F] dark:text-[#A6B8B0]">
-            Visible to your Career Guide and pod members for weekly accountability.
+            Visible to your Career Guide for weekly accountability.
           </p>
 
           <div className="space-y-3 pt-2">
@@ -227,7 +230,7 @@ export const Goals: React.FC = () => {
                       ? 'e.g. Confirm the first Career Guide conversation'
                       : idx === 1
                       ? 'e.g. Set this week’s goals'
-                      : 'e.g. Introduce yourself to your pod'
+                      : 'e.g. Draft 3 transferable impact stories'
                   }
                   className="w-full px-3.5 py-2.5 rounded-[10px] border border-[#D3DDD8] dark:border-[#2A403C] bg-[#F1F5F2]/40 dark:bg-[#122523]/40 text-[#13231F] dark:text-[#E6EEEA] text-sm focus:bg-white dark:focus:bg-[#0E1E1D]"
                 />
@@ -258,7 +261,7 @@ export const Goals: React.FC = () => {
           <div className="bg-[#FFFFFF] dark:bg-[#0E1E1D] border border-[#D3DDD8] dark:border-[#2A403C] rounded-2xl p-6 space-y-5 shadow-xs">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-[#55665F] dark:text-[#A6B8B0]">
               <span>Select the status for each goal (Not yet / Partly / Done), then click Confirm below</span>
-              <span>Week {currentRhythm?.week || 1} of 8</span>
+              <span>Week {currentWeek} of 4</span>
             </div>
 
             <div className="space-y-3">
@@ -304,12 +307,12 @@ export const Goals: React.FC = () => {
                     </div>
 
                     <div className="flex items-center flex-wrap gap-2">
-                      {isDone && (
+                      {podsEnabled && isDone && (
                         <button
                           type="button"
                           onClick={() => handleShareWin(goal.text, goal.id)}
                           className="px-3 py-1 rounded-full border border-[#D3DDD8] dark:border-[#2A403C] text-[11px] font-medium text-[#8A5A00] dark:text-[#F2B134] hover:bg-[#FFFFFF] dark:hover:bg-[#0E1E1D] flex items-center gap-1 cursor-pointer"
-                          title="Share to pod feed as a win"
+                          title="Share as a win"
                         >
                           <Share2 className="w-3 h-3" />
                           <span>{sharedWinId === goal.id ? 'Shared!' : 'Share win'}</span>

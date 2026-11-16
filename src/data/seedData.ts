@@ -96,7 +96,7 @@ const BASE_GUIDES: SeedGuide[] = [
       went_back: false,
       years_since_move: 2,
       story:
-        'Transitioned from corporate strategy and operations into software product management. Passionate about helping career switchers convert domain knowledge into product leadership.',
+        'Transitioned from corporate strategy and operations into software product management. Passionate about helping career changers convert domain knowledge into product leadership.',
       confirmed_at: '2025-01-08T10:00:00Z',
     },
     active_switchers_count: 0,
@@ -357,7 +357,7 @@ const BASE_GUIDES: SeedGuide[] = [
         'Transitioned directly into Platform TPM. The key was showing business impact beyond tickets closed.',
       confirmed_at: '2024-12-05T15:00:00Z',
     },
-    active_switchers_count: 0,
+    active_switchers_count: 2,
   },
   // 9. Meera B. (Consultant -> Product Designer)
   {
@@ -808,7 +808,7 @@ export const DEFAULT_BHARAT_SWITCHER: {
       user_id: 'user-bharat-k',
       week_start: '2025-03-03',
       week_number: 1,
-      text: 'Introduce yourself to your pod',
+      text: 'Draft 3 transferable impact stories from your current role',
       status: 'not_yet',
       updated_at: '2025-03-08T09:00:00Z',
     },

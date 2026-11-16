@@ -12,6 +12,8 @@ import {
   ArrowRight,
   KeyRound,
   Database,
+  BarChart3,
+  FastForward,
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
@@ -23,6 +25,7 @@ export const WalkthroughToolbar: React.FC = () => {
     theme,
     toggleTheme,
     currentRhythm,
+    simulateWeekAdvance,
     demoMode,
     setDemoMode,
     demoToast,
@@ -70,14 +73,14 @@ export const WalkthroughToolbar: React.FC = () => {
             </span>
             {currentRhythm && (
               <span className="text-[10px] text-[#F2B134] font-semibold ml-1 border-l border-[#2A403C] pl-1.5">
-                Week {currentRhythm.week} of 8
+                Week {Math.min(4, currentRhythm.week)} of 4
               </span>
             )}
           </div>
 
           {demoMode && (
             <span className="text-[10px] text-[#F2B134] bg-[#F2B134]/10 border border-[#F2B134]/30 px-2.5 py-0.5 rounded-full">
-              Note: Sample Guides & Demo Switcher are created only for demo evaluation and can be removed later on.
+              Note: Sample Guides &amp; Demo Career Changer are created only for demo evaluation and can be removed later on.
             </span>
           )}
         </div>
@@ -101,20 +104,42 @@ export const WalkthroughToolbar: React.FC = () => {
               </button>
 
               {currentUser.role === 'admin' && (
-                <button
-                  type="button"
-                  onClick={() => navigate('/database')}
-                  className="px-2.5 py-1 rounded-full bg-[#2F7D5B]/20 hover:bg-[#2F7D5B]/30 border border-[#5FBF8F] text-[11px] text-[#5FBF8F] font-semibold flex items-center gap-1 transition-colors cursor-pointer"
-                  title="View live database records of all users who logged in (Admin only)"
-                >
-                  <Database className="w-3 h-3" />
-                  <span>User Database</span>
-                </button>
+                <>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/admin/pilot')}
+                    className="px-2.5 py-1 rounded-full bg-[#F2B134]/20 hover:bg-[#F2B134]/30 border border-[#F2B134] text-[11px] text-[#F2B134] font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+                  >
+                    <BarChart3 className="w-3 h-3" />
+                    <span>Pilot Go/No-Go</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/database')}
+                    className="px-2.5 py-1 rounded-full bg-[#2F7D5B]/20 hover:bg-[#2F7D5B]/30 border border-[#5FBF8F] text-[11px] text-[#5FBF8F] font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+                    title="View live database records of all users who logged in (Admin only)"
+                  >
+                    <Database className="w-3 h-3" />
+                    <span>User Database</span>
+                  </button>
+                </>
               )}
 
-              {/* Switch Account Dropdown & Reset ONLY appear when Sample Guides (Demo Mode) is turned ON */}
+              {/* Switch Account Dropdown & Week Advance ONLY appear when Sample Guides (Demo Mode) is turned ON */}
               {demoMode && (
                 <>
+                  {currentRhythm && (
+                    <button
+                      type="button"
+                      onClick={simulateWeekAdvance}
+                      className="px-2.5 py-1 rounded-full bg-[#0B1D20] hover:bg-[#122523] border border-[#2A403C] text-[11px] text-[#A6B8B0] hover:text-white flex items-center gap-1 cursor-pointer"
+                      title="Advance pilot week (1 to 4) to preview Week 4 Month 2 Offer"
+                    >
+                      <FastForward className="w-3 h-3 text-[#F2B134]" />
+                      <span>Next Week (Wk {currentRhythm.week >= 4 ? 1 : currentRhythm.week + 1}/4)</span>
+                    </button>
+                  )}
+
                   <div className="relative">
                     <button
                       type="button"
@@ -142,7 +167,7 @@ export const WalkthroughToolbar: React.FC = () => {
                         >
                           <div>
                             <p className="font-semibold">Bharat K. (bharatk6325@gmail.com)</p>
-                            <p className="text-[10px] text-[#A6B8B0]">Active Switcher • Week 1 of 8</p>
+                            <p className="text-[10px] text-[#A6B8B0]">Active Career Changer • Week 1 of 4</p>
                           </div>
                           <span className="text-[10px] text-[#F2B134] font-semibold">Demo</span>
                         </button>
@@ -157,7 +182,7 @@ export const WalkthroughToolbar: React.FC = () => {
                           className="w-full text-left px-2.5 py-2 rounded-lg text-[11px] hover:bg-[#122523] text-[#E6EEEA] hover:text-white cursor-pointer"
                         >
                           <p className="font-semibold">Varun K. (varunk6325@gmail.com)</p>
-                          <p className="text-[10px] text-[#A6B8B0]">New Switcher • Fresh Onboarding</p>
+                          <p className="text-[10px] text-[#A6B8B0]">New Career Changer • Fresh Onboarding</p>
                         </button>
 
                         <button
@@ -170,7 +195,7 @@ export const WalkthroughToolbar: React.FC = () => {
                           className="w-full text-left px-2.5 py-2 rounded-lg text-[11px] hover:bg-[#122523] text-[#E6EEEA] hover:text-white cursor-pointer"
                         >
                           <p className="font-semibold">Arjun K. (Career Guide View)</p>
-                          <p className="text-[10px] text-[#A6B8B0]">Accept requests & edit 8-week plan</p>
+                          <p className="text-[10px] text-[#A6B8B0]">Accept requests &amp; edit 4-week plan</p>
                         </button>
 
                         <button
@@ -178,12 +203,12 @@ export const WalkthroughToolbar: React.FC = () => {
                           onClick={() => {
                             switchUser('admin');
                             setShowPersonaDropdown(false);
-                            navigate('/admin');
+                            navigate('/admin/pilot');
                           }}
                           className="w-full text-left px-2.5 py-2 rounded-lg text-[11px] hover:bg-[#122523] text-[#E6EEEA] hover:text-white cursor-pointer"
                         >
-                          <p className="font-semibold">Admin (Approvals & Moderation)</p>
-                          <p className="text-[10px] text-[#A6B8B0]">Review Career Guide applications</p>
+                          <p className="font-semibold">Admin (Pilot Go/No-Go &amp; Approvals)</p>
+                          <p className="text-[10px] text-[#A6B8B0]">Pilot cohort metrics, price test &amp; waitlist</p>
                         </button>
 
                         <div className="border-t border-[#2A403C] pt-1 mt-1">

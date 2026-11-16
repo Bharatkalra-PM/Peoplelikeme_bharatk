@@ -32,7 +32,7 @@ if (process.env.GEMINI_API_KEY) {
 // Config endpoint (exposes DEMO_MODE safely, default false)
 app.get('/api/config', (_req: Request, res: Response) => {
   res.json({
-    demoMode: process.env.DEMO_MODE === 'true' || process.env.VITE_DEMO_MODE === 'true',
+    demoMode: process.env.DEMO_MODE === 'true' || process.env.VITE_DEMO_MODE === 'true', podsEnabled: process.env.PODS_ENABLED === 'true' || process.env.VITE_PODS_ENABLED === 'true',
     aiConfigured: !!ai,
   });
 });
@@ -188,7 +188,7 @@ app.post('/api/gemini/match-reason', async (req: Request, res: Response) => {
       const response = await ai.models.generateContent({
         model: 'gemini-3.8-flash',
         contents: `
-Switcher:
+Career Changer:
 - From: ${switcherProfile.from_role} (${switcherProfile.from_field})
 - To: ${switcherProfile.to_role}
 - Experience: ${switcherProfile.years_experience} years
@@ -249,7 +249,7 @@ User Profile:
 `,
         config: {
           systemInstruction:
-            'Draft 5 personal career transition milestones placed across an 8-week plan (weeks 1, 2, 4, 6, 8). Skip anything the user has already done (for example, if the CV is already rewritten, do not include rewriting the CV). Return JSON array of objects with week (1-8), title, and description.',
+            'Draft 5 personal career transition milestones placed across an 4-week pilot plan (weeks 1, 2, 3, 4). Skip anything the user has already done (for example, if the CV is already rewritten, do not include rewriting the CV). Return JSON array of objects with week (1-4), title, and description.',
           responseMimeType: 'application/json',
           responseSchema: {
             type: Type.ARRAY,

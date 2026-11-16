@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { InitialsAvatar } from '../../components/InitialsAvatar';
 import { DatabaseRecords } from '../DatabaseRecords';
+import { AdminPilot } from './AdminPilot';
 import {
   Shield,
   ShieldAlert,
@@ -28,7 +29,6 @@ export const AdminHub: React.FC = () => {
     resolveReport,
   } = useApp();
 
-  // Admin role only check (Pillar 4)
   if (currentUser?.role !== 'admin') {
     return (
       <div className="max-w-lg mx-auto py-12 text-center space-y-4">
@@ -45,7 +45,7 @@ export const AdminHub: React.FC = () => {
           <button
             type="button"
             onClick={() => switchUser('admin')}
-            className="px-5 py-2.5 rounded-full bg-[#102A2E] dark:bg-[#F2B134] text-white dark:text-[#102A2E] text-xs font-semibold"
+            className="px-5 py-2.5 rounded-full bg-[#102A2E] dark:bg-[#F2B134] text-white dark:text-[#102A2E] text-xs font-semibold cursor-pointer"
           >
             Switch to Admin Role
           </button>
@@ -64,22 +64,34 @@ export const AdminHub: React.FC = () => {
 
   return (
     <div className="space-y-8">
-      <div className="pb-2 border-b border-[#D3DDD8] dark:border-[#2A403C]">
-        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#8A5A00] dark:text-[#F2B134]">
-          <Shield className="w-4 h-4" />
-          <span>Internal Moderation Hub (Admin Role Only)</span>
+      <div className="pb-2 border-b border-[#D3DDD8] dark:border-[#2A403C] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#8A5A00] dark:text-[#F2B134]">
+            <Shield className="w-4 h-4" />
+            <span>Internal Moderation &amp; Pilot Hub (Admin Role Only)</span>
+          </div>
+          <h1 className="font-heading text-2xl sm:text-3xl font-normal text-[#13231F] dark:text-[#E6EEEA] mt-1">
+            Admin Dashboard &amp; Pilot Go/No-Go
+          </h1>
+          <p className="text-xs sm:text-sm text-[#55665F] dark:text-[#A6B8B0] mt-0.5">
+            Track 4-week pilot Go/No-Go measures, Month 2 price test, pilot moves, waitlist, and Career Guide approvals.
+          </p>
         </div>
-        <h1 className="font-heading text-2xl sm:text-3xl font-normal text-[#13231F] dark:text-[#E6EEEA] mt-1">
-          Admin Dashboard
-        </h1>
-        <p className="text-xs sm:text-sm text-[#55665F] dark:text-[#A6B8B0] mt-0.5">
-          Review Career Guide applications with automatic checks, CV, and move story. Only approved Career Guides can be recommended.
-        </p>
+
+        <Link
+          to="/admin/pilot"
+          className="self-start sm:self-auto px-4 py-2 rounded-full bg-[#102A2E] dark:bg-[#F2B134] text-white dark:text-[#102A2E] text-xs font-semibold"
+        >
+          Open Dedicated Pilot Page →
+        </Link>
       </div>
+
+      {/* Section 9: Embedded Pilot Go/No-Go Dashboard, Price Test Split, Pilot Moves & Waitlist */}
+      <AdminPilot embedded />
 
       <DatabaseRecords embedded />
 
-      {/* Career Guide Applications Queue (Pillar 4) */}
+      {/* Career Guide Applications Queue */}
       <section className="space-y-4">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <h2 className="text-sm font-semibold text-[#13231F] dark:text-[#E6EEEA] flex items-center gap-2">
@@ -87,7 +99,7 @@ export const AdminHub: React.FC = () => {
             <span>Career Guide Applications ({guideApplications.length})</span>
           </h2>
           <span className="text-xs text-[#55665F] dark:text-[#A6B8B0]">
-            Automatic checks: LinkedIn connected â€¢ Email verified â€¢ Move found (&ge;2y earlier, &ge;1y current)
+            Automatic checks: LinkedIn connected • Email verified • Move found (&ge;2y earlier, &ge;1y current)
           </span>
         </div>
 
@@ -121,7 +133,6 @@ export const AdminHub: React.FC = () => {
                 data-testid={`admin-application-${app.id}`}
                 className="bg-[#FFFFFF] dark:bg-[#0E1E1D] border border-[#D3DDD8] dark:border-[#2A403C] rounded-2xl p-6 space-y-4 shadow-xs"
               >
-                {/* Header */}
                 <div className="flex items-start justify-between gap-4 flex-wrap">
                   <div className="flex items-center gap-3">
                     <InitialsAvatar firstName={firstName} lastInitial={lastInitial} size="md" />
@@ -131,11 +142,11 @@ export const AdminHub: React.FC = () => {
                           {app.full_name}
                         </h3>
                         <span className="text-xs text-[#55665F] dark:text-[#A6B8B0]">
-                          ({app.email} â€¢ {app.city})
+                          ({app.email} • {app.city})
                         </span>
                       </div>
                       <p className="text-xs font-medium text-[#13231F] dark:text-[#E6EEEA] mt-0.5">
-                        {app.from_role} ({app.years_in_earlier_role} yrs) â†’ {app.to_role} ({app.years_in_current_role} yrs) â€¢ Took {app.how_long_it_took}
+                        {app.from_role} ({app.years_in_earlier_role} yrs) → {app.to_role} ({app.years_in_current_role} yrs) • Took {app.how_long_it_took}
                       </p>
                     </div>
                   </div>
@@ -179,25 +190,10 @@ export const AdminHub: React.FC = () => {
                       <AlertTriangle className="w-4 h-4 text-[#A8432C] dark:text-[#E58C73] shrink-0" />
                     )}
                     <span className="font-medium">
-                      Move found: {(app.checks?.move_found ?? (app as any).move_found_check) ? 'Verified (â‰¥2y / â‰¥1y)' : 'Flagged (<2y or <1y)'}
+                      Move found: {(app.checks?.move_found ?? (app as any).move_found_check) ? 'Verified (≥2y / ≥1y)' : 'Flagged (<2y or <1y)'}
                     </span>
                   </div>
                 </div>
-
-                {/* Mismatch Flags if any */}
-                {(app.checks?.mismatch_flags ?? (app as any).mismatch_flags ?? []).length > 0 && (
-                  <div className="p-3 rounded-xl bg-[#A8432C]/10 border border-[#A8432C]/30 text-xs text-[#A8432C] dark:text-[#E58C73] space-y-1">
-                    <span className="font-semibold flex items-center gap-1.5">
-                      <AlertTriangle className="w-3.5 h-3.5" />
-                      <span>Automatic Check Flags:</span>
-                    </span>
-                    <ul className="list-disc pl-5 space-y-0.5">
-                      {(app.checks?.mismatch_flags ?? (app as any).mismatch_flags ?? []).map((flag, i) => (
-                        <li key={i}>{flag}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
 
                 {/* Story & CV */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
@@ -206,10 +202,10 @@ export const AdminHub: React.FC = () => {
                       Your move, in your words
                     </span>
                     <p className="text-[#13231F] dark:text-[#E6EEEA] leading-relaxed">
-                      "{(app.story ?? (app as any).story_in_words)}"
+                      &ldquo;{(app.story ?? (app as any).story_in_words)}&rdquo;
                     </p>
                     <p className="text-[#55665F] dark:text-[#A6B8B0] pt-1">
-                      <strong>What they'd do differently:</strong> {(app.what_would_do_differently ?? (app as any).what_do_differently)}
+                      <strong>What they&apos;d do differently:</strong> {(app.what_would_do_differently ?? (app as any).what_do_differently)}
                     </p>
                   </div>
 
@@ -229,7 +225,7 @@ export const AdminHub: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => approveGuideApplication(app.id)}
-                    className="px-4 py-2 rounded-full bg-[#2F7D5B] hover:bg-[#25664a] text-white text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs"
+                    className="px-4 py-2 rounded-full bg-[#2F7D5B] hover:bg-[#25664a] text-white text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer"
                   >
                     <Check className="w-3.5 h-3.5" />
                     <span>Approve</span>
@@ -243,7 +239,7 @@ export const AdminHub: React.FC = () => {
                         'Please share a little more detail on your current role responsibilities and CV dates.'
                       )
                     }
-                    className="px-4 py-2 rounded-full border border-[#D3DDD8] dark:border-[#2A403C] hover:bg-[#F1F5F2] dark:hover:bg-[#122523] text-xs font-medium text-[#8A5A00] dark:text-[#F2B134] flex items-center gap-1.5"
+                    className="px-4 py-2 rounded-full border border-[#D3DDD8] dark:border-[#2A403C] hover:bg-[#F1F5F2] dark:hover:bg-[#122523] text-xs font-medium text-[#8A5A00] dark:text-[#F2B134] flex items-center gap-1.5 cursor-pointer"
                   >
                     <HelpCircle className="w-3.5 h-3.5" />
                     <span>Ask for more</span>
@@ -252,7 +248,7 @@ export const AdminHub: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => rejectGuideApplication(app.id)}
-                    className="px-4 py-2 rounded-full border border-[#A8432C]/40 hover:bg-[#A8432C]/10 text-xs font-medium text-[#A8432C] dark:text-[#E58C73] flex items-center gap-1.5"
+                    className="px-4 py-2 rounded-full border border-[#A8432C]/40 hover:bg-[#A8432C]/10 text-xs font-medium text-[#A8432C] dark:text-[#E58C73] flex items-center gap-1.5 cursor-pointer"
                   >
                     <X className="w-3.5 h-3.5" />
                     <span>Reject</span>
@@ -272,7 +268,7 @@ export const AdminHub: React.FC = () => {
             <span>Community Reports ({activeReports.length})</span>
           </h2>
           <span className="text-xs text-[#55665F] dark:text-[#A6B8B0]">
-            Reported users are automatically paused from pods pending review
+            Reported accounts are automatically paused pending review
           </span>
         </div>
 
@@ -299,26 +295,21 @@ export const AdminHub: React.FC = () => {
                 <p className="text-xs text-[#13231F] dark:text-[#E6EEEA]">
                   <strong>Reported Member:</strong> {rep.reported_name}
                 </p>
-                {rep.details && (
-                  <p className="text-xs text-[#55665F] dark:text-[#A6B8B0] bg-[#F1F5F2] dark:bg-[#122523] p-3 rounded-xl border border-[#D3DDD8]/60 dark:border-[#2A403C]">
-                    "{rep.details}"
-                  </p>
-                )}
 
                 <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#D3DDD8]/60 dark:border-[#2A403C]">
                   <button
                     type="button"
                     onClick={() => resolveReport(rep.id, 'dismiss')}
-                    className="px-4 py-1.5 rounded-full border border-[#D3DDD8] dark:border-[#2A403C] text-xs font-medium hover:bg-[#F1F5F2] dark:hover:bg-[#122523]"
+                    className="px-4 py-1.5 rounded-full border border-[#D3DDD8] dark:border-[#2A403C] text-xs font-medium hover:bg-[#F1F5F2] dark:hover:bg-[#122523] cursor-pointer"
                   >
                     Dismiss report
                   </button>
                   <button
                     type="button"
                     onClick={() => resolveReport(rep.id, 'pause_user')}
-                    className="px-4 py-1.5 rounded-full bg-[#A8432C] hover:bg-[#8e3825] text-white text-xs font-medium"
+                    className="px-4 py-1.5 rounded-full bg-[#A8432C] hover:bg-[#8e3825] text-white text-xs font-medium cursor-pointer"
                   >
-                    Confirm & keep paused
+                    Confirm &amp; keep paused
                   </button>
                 </div>
               </div>
@@ -329,4 +320,3 @@ export const AdminHub: React.FC = () => {
     </div>
   );
 };
-

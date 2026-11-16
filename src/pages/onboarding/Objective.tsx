@@ -2,12 +2,14 @@ import React from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { BrandMark } from '../../components/BrandMark';
+import { isPodsEnabled } from '../../lib/pilotConfig';
 import { ArrowRight, Compass, RotateCcw, LogOut } from 'lucide-react';
 import { ObjectiveType } from '../../types';
 
 export const Objective: React.FC = () => {
   const { currentUser, setUserObjective, logout } = useApp();
   const navigate = useNavigate();
+  const podsEnabled = isPodsEnabled();
 
   const handleSelect = (obj: ObjectiveType) => {
     setUserObjective(obj);
@@ -44,12 +46,12 @@ export const Objective: React.FC = () => {
             Choose your objective
           </h1>
           <p className="text-sm text-[#55665F] dark:text-[#A6B8B0]">
-            Tell us where you are in your career journey so we can match you with the right Career Guide and peer pod.
+            Tell us where you are in your career journey so we can match you with the right Career Guide{podsEnabled ? ' and peer pod' : ' for your four-week pilot'}.
           </p>
         </div>
 
         <div className="space-y-4">
-          {/* Option 1: Switch to a new role or field */}
+          {/* Option 1: Change to a new role or field (Section 1 requirement) */}
           <button
             type="button"
             onClick={() => handleSelect('switch_role')}
@@ -61,10 +63,12 @@ export const Objective: React.FC = () => {
               </div>
               <div className="space-y-1">
                 <h2 className="text-base font-semibold text-[#13231F] dark:text-[#E6EEEA]">
-                  Switch to a new role or field
+                  Change to a new role or field
                 </h2>
                 <p className="text-xs text-[#55665F] dark:text-[#A6B8B0] leading-relaxed">
-                  Work with a Career Guide who made your exact move 1–5 years ago and a pod of peers at your stage.
+                  {podsEnabled
+                    ? 'Work with a Career Guide who made your exact move 1–5 years ago and a pod of peers at your stage.'
+                    : 'Work one-on-one with a Career Guide who made your exact move 1–5 years ago over a structured four-week pilot.'}
                 </p>
               </div>
             </div>
@@ -86,7 +90,9 @@ export const Objective: React.FC = () => {
                   Restart after a career break
                 </h2>
                 <p className="text-xs text-[#55665F] dark:text-[#A6B8B0] leading-relaxed">
-                  Rebuild momentum with an eight-week structured plan, a supportive Career Guide, and a peer pod.
+                  {podsEnabled
+                    ? 'Rebuild momentum with a structured plan, a supportive Career Guide, and a peer pod.'
+                    : 'Rebuild momentum with a four-week structured plan and a supportive Career Guide.'}
                 </p>
               </div>
             </div>
@@ -98,7 +104,7 @@ export const Objective: React.FC = () => {
       <footer className="max-w-2xl mx-auto w-full text-center text-xs text-[#55665F] dark:text-[#A6B8B0] py-4 space-y-1">
         <p>Privacy by default • You can change your objective at any time in Settings.</p>
         <p className="text-[11px]">
-          Already made a career transition and want to guide others?{' '}
+          Already made a career change and want to guide others?{' '}
           <Link to="/become-a-guide" className="text-[#2D6B8F] dark:text-[#7FB6D6] hover:underline font-medium">
             Apply on Become a Career Guide →
           </Link>

@@ -640,7 +640,7 @@ export const Pod: React.FC = () => {
                         {selectedMember.profile.first_name} {selectedMember.profile.last_initial}
                       </h3>
                       <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-[#F2B134]/20 text-[#8A5A00] dark:text-[#F2B134]">
-                        Week {currentWeek} of 8
+                        Week {Math.min(4, currentWeek)} of 4
                       </span>
                     </div>
                     <p className="text-xs font-semibold text-[#2F7D5B] dark:text-[#5FBF8F] mt-1">

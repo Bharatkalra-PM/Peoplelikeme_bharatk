@@ -4,6 +4,7 @@ import { useApp } from '../../context/AppContext';
 import { OnboardingProgressBar } from '../../components/OnboardingProgressBar';
 import { requestDraftMoveProfile } from '../../lib/gemini';
 import { formatMoveLine } from '../../lib/matching';
+import { isPodsEnabled } from '../../lib/pilotConfig';
 import { GenderOption, MoveProfile } from '../../types';
 import { ArrowLeft, ArrowRight, Sparkles, Loader2, Check, Info } from 'lucide-react';
 
@@ -18,6 +19,7 @@ export const Confirm: React.FC = () => {
     setDraftedProfile,
   } = useApp();
   const navigate = useNavigate();
+  const podsEnabled = isPodsEnabled();
 
   const [loading, setLoading] = useState(!draftedProfile);
   const [usedFallback, setUsedFallback] = useState(false);
@@ -26,7 +28,7 @@ export const Confirm: React.FC = () => {
   const [profile, setProfile] = useState<MoveProfile>(() => {
     return (
       draftedProfile || {
-        user_id: currentUser?.id || 'switcher-varun',
+        user_id: currentUser?.id || 'changer-varun',
         from_role:
           detailChips.from_role ||
           storyAnswers?.coming_from?.answer ||
@@ -78,7 +80,7 @@ export const Confirm: React.FC = () => {
           if (!isMounted) return;
           setUsedFallback(fb);
           const merged: MoveProfile = {
-            user_id: currentUser?.id || 'switcher-varun',
+            user_id: currentUser?.id || 'changer-varun',
             from_role:
               detailChips.from_role || draft.from_role || 'B2B Sales Lead',
             from_field: detailChips.from_field || draft.from_field || 'Sales',
@@ -122,7 +124,6 @@ export const Confirm: React.FC = () => {
     if (isSaving) return;
     setIsSaving(true);
     confirmMoveProfile(profile);
-    // Navigate to Step 4: Dashboard before matching
     navigate('/home');
   };
 
@@ -147,7 +148,7 @@ export const Confirm: React.FC = () => {
             Confirm your move
           </h1>
           <p className="text-sm text-[#55665F] dark:text-[#A6B8B0]">
-            Review and edit every field below. This profile is used to match you with approved Career Guides and your peer pod.
+            Review and edit every field below. This profile is used to match you with approved Career Guides{podsEnabled ? ' and your peer pod' : ''}.
           </p>
         </div>
 
@@ -304,7 +305,7 @@ export const Confirm: React.FC = () => {
                 </select>
               </div>
 
-                            <div className="space-y-1 sm:col-span-2">
+              <div className="space-y-1 sm:col-span-2">
                 <label className="text-xs font-medium text-[#55665F] dark:text-[#A6B8B0]">
                   Summary story
                 </label>
@@ -316,31 +317,33 @@ export const Confirm: React.FC = () => {
                 />
               </div>
 
-              <div className="space-y-1 sm:col-span-2 pt-2 border-t border-[#D3DDD8]/60 dark:border-[#2A403C]">
-                <label
-                  htmlFor="confirm-pod-intro"
-                  className="text-xs font-semibold text-[#13231F] dark:text-[#E6EEEA] block"
-                >
-                  Share a short intro with your pod (optional, 2 lines)
-                </label>
-                <p className="text-[11px] text-[#55665F] dark:text-[#A6B8B0]">
-                  Prefilled from your story so your pod peers can get to know your move. Your email, phone, full name, and employer stay private by default.
-                </p>
-                <textarea
-                  id="confirm-pod-intro"
-                  rows={2}
-                  value={
-                    (profile as any).pod_intro ??
-                    `Moving from ${profile.from_role || 'my current role'} into ${
-                      profile.to_role || 'my target role'
-                    }. Excited to trade weekly wins and interview prep with the pod!`
-                  }
-                  onChange={(e) =>
-                    setProfile({ ...profile, pod_intro: e.target.value } as any)
-                  }
-                  className="w-full px-3 py-2 rounded-[10px] border border-[#D3DDD8] dark:border-[#2A403C] bg-[#F1F5F2]/40 dark:bg-[#122523]/40 text-[#13231F] dark:text-[#E6EEEA] text-xs sm:text-sm resize-none"
-                />
-              </div>
+              {podsEnabled && (
+                <div className="space-y-1 sm:col-span-2 pt-2 border-t border-[#D3DDD8]/60 dark:border-[#2A403C]">
+                  <label
+                    htmlFor="confirm-pod-intro"
+                    className="text-xs font-semibold text-[#13231F] dark:text-[#E6EEEA] block"
+                  >
+                    Share a short intro with your pod (optional, 2 lines)
+                  </label>
+                  <p className="text-[11px] text-[#55665F] dark:text-[#A6B8B0]">
+                    Prefilled from your story so your pod peers can get to know your move. Your email, phone, full name, and employer stay private by default.
+                  </p>
+                  <textarea
+                    id="confirm-pod-intro"
+                    rows={2}
+                    value={
+                      (profile as any).pod_intro ??
+                      `Moving from ${profile.from_role || 'my current role'} into ${
+                        profile.to_role || 'my target role'
+                      }. Excited to trade weekly wins and interview prep!`
+                    }
+                    onChange={(e) =>
+                      setProfile({ ...profile, pod_intro: e.target.value } as any)
+                    }
+                    className="w-full px-3 py-2 rounded-[10px] border border-[#D3DDD8] dark:border-[#2A403C] bg-[#F1F5F2]/40 dark:bg-[#122523]/40 text-[#13231F] dark:text-[#E6EEEA] text-xs sm:text-sm resize-none"
+                  />
+                </div>
+              )}
             </div>
           </div>
         )}

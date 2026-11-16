@@ -3,6 +3,7 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { BrandMark } from './BrandMark';
 import { InitialsAvatar } from './InitialsAvatar';
+import { isPodsEnabled } from '../lib/pilotConfig';
 import {
   Home,
   Users,
@@ -10,19 +11,19 @@ import {
   CheckSquare,
   Settings,
   Inbox,
-  UserCheck,
   Shield,
   LogOut,
   Calendar,
   Database,
+  BarChart3,
 } from 'lucide-react';
 
 export const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { currentUser, logout, currentRhythm } = useApp();
   const location = useLocation();
   const navigate = useNavigate();
+  const podsEnabled = isPodsEnabled();
 
-  // If user is not logged in or in onboarding flows, render clean layout without sidebar/bottom tabs
   const isOnboarding =
     location.pathname === '/' ||
     location.pathname === '/signup' ||
@@ -40,35 +41,41 @@ export const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }
   const isGuide = currentUser.role === 'guide';
   const isAdmin = currentUser.role === 'admin';
 
-  // Navigation items for Switcher vs Guide vs Admin
+  // Navigation items for Career Changer vs Career Guide vs Admin
+  const changerNavItems = [
+    { label: 'Home', to: '/home', icon: Home },
+    { label: 'My plan', to: '/plan', icon: Calendar },
+    ...(podsEnabled ? [{ label: 'Pod', to: '/pod', icon: Users }] : []),
+    { label: 'Career Guide', to: '/guide', icon: Compass },
+    { label: 'Goals', to: '/goals', icon: CheckSquare },
+    { label: 'Settings', to: '/settings', icon: Settings },
+  ];
+
   const navItems = isGuide
     ? [
         { label: 'Requests', to: '/guide-home', icon: Inbox },
-        { label: 'Switchers', to: '/guide-home/switchers', icon: Users },
+        { label: 'Career Changers', to: '/guide-home/switchers', icon: Users },
         { label: 'Settings', to: '/settings', icon: Settings },
       ]
     : isAdmin
     ? [
+        { label: 'Pilot Go/No-Go', to: '/admin/pilot', icon: BarChart3 },
         { label: 'Admin Hub', to: '/admin', icon: Shield },
         { label: 'User Database', to: '/database', icon: Database },
-        { label: 'Switchers View', to: '/home', icon: Home },
+        { label: 'Career Changer View', to: '/home', icon: Home },
         { label: 'Settings', to: '/settings', icon: Settings },
       ]
-    : [
-        { label: 'Home', to: '/home', icon: Home },
-        { label: 'My plan', to: '/plan', icon: Calendar },
-        { label: 'Pod', to: '/pod', icon: Users },
-        { label: 'Career Guide', to: '/guide', icon: Compass },
-        { label: 'Goals', to: '/goals', icon: CheckSquare },
-        { label: 'Settings', to: '/settings', icon: Settings },
-      ];
+    : changerNavItems;
 
-  const roleLabel = isGuide ? 'Career Guide' : isAdmin ? 'Admin' : 'Career Switcher';
+  const roleLabel = isGuide ? 'Career Guide' : isAdmin ? 'Admin' : 'Career Changer';
 
   return (
     <div className="min-h-screen bg-[#F1F5F2] dark:bg-[#122523] flex flex-col md:flex-row">
-      {/* Desktop Sidebar (1280px friendly, thin borders, calm) */}
-      <aside aria-label="Main Navigation" className="hidden md:flex flex-col w-64 border-r border-[#D3DDD8] dark:border-[#2A403C] bg-[#FFFFFF] dark:bg-[#0E1E1D] p-5 shrink-0 justify-between">
+      {/* Desktop Sidebar */}
+      <aside
+        aria-label="Main Navigation"
+        className="hidden md:flex flex-col w-64 border-r border-[#D3DDD8] dark:border-[#2A403C] bg-[#FFFFFF] dark:bg-[#0E1E1D] p-5 shrink-0 justify-between"
+      >
         <div className="space-y-6">
           <div className="pt-1 pb-2">
             <BrandMark linkTo={isGuide ? '/guide-home' : '/home'} />
@@ -83,7 +90,7 @@ export const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }
               </p>
               <p className="text-[11px] text-[#55665F] dark:text-[#A6B8B0] truncate">
                 {roleLabel}
-                {currentRhythm && !isGuide ? ` • Week ${currentRhythm.week} of 8` : ''}
+                {currentRhythm && !isGuide ? ` • Week ${Math.min(4, currentRhythm.week)} of 4` : ''}
               </p>
             </div>
           </div>
@@ -118,12 +125,15 @@ export const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }
               to="/wrap-up"
               className="block text-xs text-[#55665F] dark:text-[#A6B8B0] hover:text-[#13231F] dark:hover:text-[#E6EEEA] px-3 py-1.5"
             >
-              8-Week Wrap-up
+              4-Week Wrap-up &amp; Month 2
             </NavLink>
           )}
           <button
-            onClick={() => { logout(); navigate('/'); }}
-            className="flex items-center gap-2 px-3 py-1.5 text-xs text-[#A8432C] dark:text-[#E58C73] hover:opacity-80 transition-opacity w-full text-left"
+            onClick={() => {
+              logout();
+              navigate('/');
+            }}
+            className="flex items-center gap-2 px-3 py-1.5 text-xs text-[#A8432C] dark:text-[#E58C73] hover:opacity-80 transition-opacity w-full text-left cursor-pointer"
           >
             <LogOut className="w-3.5 h-3.5" />
             <span>Sign out</span>
@@ -138,8 +148,11 @@ export const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }
           <BrandMark linkTo={isGuide ? '/guide-home' : '/home'} />
           <div className="flex items-center gap-3">
             <button
-              onClick={() => { logout(); navigate('/'); }}
-              className="text-xs text-[#A8432C] dark:text-[#E58C73] font-medium flex items-center gap-1"
+              onClick={() => {
+                logout();
+                navigate('/');
+              }}
+              className="text-xs text-[#A8432C] dark:text-[#E58C73] font-medium flex items-center gap-1 cursor-pointer"
             >
               <LogOut className="w-3.5 h-3.5" />
               <span>Sign out</span>
@@ -153,8 +166,11 @@ export const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }
         </div>
       </main>
 
-      {/* Mobile Bottom Navigation Tabs (390px mobile first, plain words) */}
-      <nav aria-label="Mobile Navigation" className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-[#FFFFFF] dark:bg-[#0E1E1D] border-t border-[#D3DDD8] dark:border-[#2A403C] px-2 py-1.5 flex items-center justify-around">
+      {/* Mobile Bottom Navigation Tabs */}
+      <nav
+        aria-label="Mobile Navigation"
+        className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-[#FFFFFF] dark:bg-[#0E1E1D] border-t border-[#D3DDD8] dark:border-[#2A403C] px-2 py-1.5 flex items-center justify-around"
+      >
         {navItems.slice(0, 4).map((item) => {
           const Icon = item.icon;
           return (
@@ -162,14 +178,14 @@ export const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }
               key={item.to}
               to={item.to}
               className={({ isActive }) =>
-                `flex flex-col items-center py-1 px-3 rounded-lg text-[11px] font-medium transition-colors ${
+                `flex flex-col items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-colors ${
                   isActive
-                    ? 'text-[#102A2E] dark:text-[#F2B134]'
+                    ? 'text-[#102A2E] dark:text-[#F2B134] font-semibold'
                     : 'text-[#55665F] dark:text-[#A6B8B0]'
                 }`
               }
             >
-              <Icon className="w-5 h-5 mb-0.5" />
+              <Icon className="w-4 h-4" />
               <span>{item.label}</span>
             </NavLink>
           );

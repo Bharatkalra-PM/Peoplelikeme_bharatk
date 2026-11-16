@@ -1,10 +1,16 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { BrandMark } from '../components/BrandMark';
 import { InitialsAvatar } from '../components/InitialsAvatar';
+import { WhyThisMatchModal } from '../components/WhyThisMatchModal';
 import { isNewGuide } from '../lib/matching';
-import { GenderOption } from '../types';
+import {
+  matchesPilotMove,
+  loadPilotMoves,
+  addToWaitlist,
+} from '../lib/pilotConfig';
+import { GenderOption, SeedGuide } from '../types';
 import {
   ShieldCheck,
   Bell,
@@ -15,6 +21,7 @@ import {
   ArrowRight,
   X,
   Check,
+  CheckCircle2,
 } from 'lucide-react';
 
 export const Guides: React.FC = () => {
@@ -24,11 +31,33 @@ export const Guides: React.FC = () => {
     rematchReasonNote,
     currentMoveProfile,
     currentUser,
-    updateMatchingParameters, sendGuideRequest, acceptGuideRequest,
+    updateMatchingParameters,
+    sendGuideRequest,
   } = useApp();
   const navigate = useNavigate();
-  const [notified, setNotified] = useState(false);
+  const [notified, setNotified] = useState(true);
   const [showAdjustModal, setShowAdjustModal] = useState(false);
+  const [whyMatchGuide, setWhyMatchGuide] = useState<SeedGuide | null>(null);
+
+  const pilotMoves = loadPilotMoves();
+  const fromRole = currentMoveProfile?.from_role || 'Sales';
+  const toRole = currentMoveProfile?.to_role || 'Product Manager';
+  const pilotCheck = matchesPilotMove(fromRole, toRole, pilotMoves);
+  const isNonPilotMove = !pilotCheck.matched;
+
+  // Automatically record non-pilot move onto the waitlist (Section 5)
+  useEffect(() => {
+    if (isNonPilotMove) {
+      addToWaitlist({
+        user_id: currentUser?.id || 'changer-guest',
+        full_name: currentUser?.full_name || `${currentUser?.first_name || 'Career'} ${currentUser?.last_initial || 'Changer'}`,
+        email: currentUser?.email || 'changer@example.com',
+        city: currentUser?.city || 'Bengaluru',
+        from_role: fromRole,
+        to_role: toRole,
+      });
+    }
+  }, [isNonPilotMove, currentUser, fromRole, toRole]);
 
   // Adjust What Matters form state
   const [adjFromRole, setAdjFromRole] = useState(
@@ -79,6 +108,7 @@ export const Guides: React.FC = () => {
   const { matches, isNoMatch } = guideCandidates;
   // Never show more than 5 at once
   const visibleMatches = matches.slice(0, 5);
+  const showWaitlistScreen = isNonPilotMove || isNoMatch;
 
   return (
     <div className="min-h-screen bg-[#F1F5F2] dark:bg-[#122523] text-[#13231F] dark:text-[#E6EEEA] p-4 sm:p-6 lg:p-8">
@@ -127,14 +157,14 @@ export const Guides: React.FC = () => {
             <h1 className="font-heading text-2xl sm:text-3xl font-normal text-[#13231F] dark:text-[#E6EEEA]">
               Recommended Career Guides
             </h1>
-            {!isNoMatch && (
+            {!showWaitlistScreen && (
               <p className="text-sm font-medium text-[#55665F] dark:text-[#A6B8B0]">
-                These are your closest matches, not everyone.
+                These are your closest matches, not everyone. Each Career Guide guides at most two career changers at a time.
               </p>
             )}
           </div>
 
-          {!isNoMatch && (
+          {!showWaitlistScreen && (
             <button
               type="button"
               onClick={openAdjustModal}
@@ -146,16 +176,41 @@ export const Guides: React.FC = () => {
           )}
         </div>
 
-        {/* Empty / No Match State */}
-        {isNoMatch ? (
-          <div className="bg-[#FFFFFF] dark:bg-[#0E1E1D] border border-[#D3DDD8] dark:border-[#2A403C] rounded-2xl p-8 text-center space-y-5 shadow-xs">
+        {/* Non-Pilot Move Waitlist / Empty State (Section 5) */}
+        {showWaitlistScreen ? (
+          <div
+            data-testid="waitlist-non-pilot-card"
+            className="bg-[#FFFFFF] dark:bg-[#0E1E1D] border border-[#D3DDD8] dark:border-[#2A403C] rounded-2xl p-8 text-center space-y-5 shadow-xs"
+          >
+            <div className="w-12 h-12 rounded-full bg-[#2F7D5B]/15 text-[#2F7D5B] dark:text-[#5FBF8F] mx-auto flex items-center justify-center">
+              <CheckCircle2 className="w-6 h-6" />
+            </div>
+
             <div className="max-w-lg mx-auto space-y-2">
-              <h2 className="font-heading text-xl text-[#13231F] dark:text-[#E6EEEA]">
-                Nobody has made exactly this move with us yet. We'd rather tell you honestly than show a weak match.
+              <h2 className="font-heading text-xl sm:text-2xl text-[#13231F] dark:text-[#E6EEEA]">
+                We&apos;re starting with a few common moves. We&apos;ll let you know when we have Career Guides for yours.
               </h2>
               <p className="text-xs sm:text-sm text-[#55665F] dark:text-[#A6B8B0]">
-                You can ask us to notify you as soon as an approved Career Guide with this path joins, or adjust your matching parameters.
+                We&apos;ve saved your move (<strong>{fromRole} → {toRole}</strong>) to our waitlist and will notify you as soon as an approved Career Guide for your path joins.
               </p>
+            </div>
+
+            <div className="max-w-md mx-auto p-3.5 rounded-xl bg-[#F1F5F2] dark:bg-[#122523] border border-[#D3DDD8]/60 dark:border-[#2A403C] text-xs space-y-1.5">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-[#8A5A00] dark:text-[#F2B134] block">
+                Current Pilot Moves Available Now
+              </span>
+              <div className="flex flex-wrap justify-center gap-1.5">
+                {pilotMoves
+                  .filter((pm) => pm.active)
+                  .map((pm) => (
+                    <span
+                      key={pm.id}
+                      className="px-2.5 py-0.5 rounded-full bg-[#FFFFFF] dark:bg-[#0E1E1D] border border-[#D3DDD8] dark:border-[#2A403C] text-[11px] font-medium"
+                    >
+                      {pm.label}
+                    </span>
+                  ))}
+              </div>
             </div>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
@@ -165,7 +220,7 @@ export const Guides: React.FC = () => {
                 className="w-full sm:w-auto px-6 py-2.5 rounded-full bg-[#102A2E] dark:bg-[#F2B134] text-white dark:text-[#102A2E] text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer"
               >
                 <Bell className="w-3.5 h-3.5" />
-                <span>{notified ? 'âœ“ We will notify you' : 'Notify me'}</span>
+                <span>{notified ? '✓ Saved to waitlist' : 'Notify me'}</span>
               </button>
 
               <button
@@ -174,7 +229,7 @@ export const Guides: React.FC = () => {
                 className="w-full sm:w-auto px-6 py-2.5 rounded-full border border-[#D3DDD8] dark:border-[#2A403C] hover:bg-[#F1F5F2] dark:hover:bg-[#122523] text-xs font-medium flex items-center justify-center gap-2 cursor-pointer"
               >
                 <SlidersHorizontal className="w-3.5 h-3.5" />
-                <span>Adjust what matters</span>
+                <span>Adjust move or try a pilot path</span>
               </button>
             </div>
           </div>
@@ -200,7 +255,7 @@ export const Guides: React.FC = () => {
                         <InitialsAvatar
                           firstName={guide.first_name}
                           lastInitial={guide.last_initial}
-                          size="md"
+                          size="lg"
                         />
                         <div className="min-w-0">
                           <h2 className="text-sm font-semibold text-[#13231F] dark:text-[#E6EEEA] whitespace-nowrap truncate">
@@ -225,7 +280,7 @@ export const Guides: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Rating & Guided N people (Guides with < 3 ratings show "New" instead of stars) */}
+                    {/* Rating & Guided N people */}
                     <div className="flex items-center gap-2 text-xs text-[#55665F] dark:text-[#A6B8B0]">
                       {guideIsNew ? (
                         <span className="px-2 py-0.5 rounded-full bg-[#2D6B8F]/15 text-[#2D6B8F] dark:text-[#7FB6D6] font-semibold text-[11px]">
@@ -237,13 +292,13 @@ export const Guides: React.FC = () => {
                           <span>{(guide.rating_avg ?? 4.9).toFixed(1)}</span>
                         </span>
                       )}
-                      <span>Â·</span>
+                      <span>·</span>
                       <span>
                         Guided {guidedCount} {guidedCount === 1 ? 'person' : 'people'}
                       </span>
                     </div>
 
-                    {/* Move Line ("Sales, consumer goods â†’ Product manager Â· 2 years ago") */}
+                    {/* Move Line */}
                     <div className="space-y-1">
                       <span className="text-[10px] uppercase font-semibold text-[#55665F] dark:text-[#A6B8B0] tracking-wider">
                         Career Move
@@ -253,11 +308,28 @@ export const Guides: React.FC = () => {
                       </p>
                     </div>
 
-                    {/* Why we matched you (one sentence under 20 words, only shared facts) */}
-                    <div className="p-3 rounded-xl bg-[#F1F5F2] dark:bg-[#122523] border border-[#D3DDD8]/60 dark:border-[#2A403C] space-y-1">
-                      <span className="text-[10px] font-semibold text-[#55665F] dark:text-[#A6B8B0] uppercase tracking-wide">
-                        Why we matched you
-                      </span>
+                    {/* Why this match box + button to open full shared facts sheet (Section 6) */}
+                    <div className="p-3 rounded-xl bg-[#F1F5F2] dark:bg-[#122523] border border-[#D3DDD8]/60 dark:border-[#2A403C] space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-semibold text-[#55665F] dark:text-[#A6B8B0] uppercase tracking-wide">
+                          Why this match
+                        </span>
+                        <button
+                          type="button"
+                          data-testid={`guide-why-match-btn-${guide.id}`}
+                          onClick={() =>
+                            setWhyMatchGuide({
+                              profile: guide,
+                              move_profile: moveProf,
+                              active_switchers_count: 0,
+                            })
+                          }
+                          className="text-[11px] font-semibold text-[#2D6B8F] dark:text-[#7FB6D6] hover:underline flex items-center gap-1 cursor-pointer"
+                        >
+                          <Info className="w-3 h-3" />
+                          <span>Shared facts</span>
+                        </button>
+                      </div>
                       <p className="text-xs text-[#13231F] dark:text-[#E6EEEA] leading-relaxed">
                         {candidate.match_reason}
                       </p>
@@ -283,7 +355,7 @@ export const Guides: React.FC = () => {
                       onClick={() => {
                         sendGuideRequest(
                           guide.id,
-                          `Hi ${guide.first_name}, I saw your transition path and would love to connect for guidance during my move.`,
+                          `Hi ${guide.first_name}, I saw your transition path and would love to connect for guidance during my 4-week pilot.`,
                           candidate.match_reason,
                           true
                         );
@@ -299,7 +371,7 @@ export const Guides: React.FC = () => {
                       onClick={() => navigate(`/guides/${guide.id}`)}
                       className="w-full py-2 rounded-full border border-[#D3DDD8] dark:border-[#2A403C] hover:bg-[#F1F5F2] dark:hover:bg-[#122523] text-xs font-medium text-[#55665F] dark:text-[#A6B8B0] hover:text-[#13231F] dark:hover:text-[#E6EEEA] transition-colors text-center cursor-pointer"
                     >
-                      View full story & details
+                      View full story &amp; details
                     </button>
                   </div>
                 </div>
@@ -312,6 +384,17 @@ export const Guides: React.FC = () => {
           Contact details are hidden until your Career Guide accepts. You can request one Career Guide at a time.
         </p>
       </div>
+
+      {/* Why This Match Modal for any Guide Card */}
+      <WhyThisMatchModal
+        isOpen={Boolean(whyMatchGuide)}
+        onClose={() => setWhyMatchGuide(null)}
+        mode="guide"
+        userProfile={currentUser}
+        userMove={currentMoveProfile}
+        guideProfile={whyMatchGuide?.profile}
+        guideMove={whyMatchGuide?.move_profile}
+      />
 
       {/* Adjust What Matters Modal */}
       {showAdjustModal && (
@@ -465,4 +548,3 @@ export const Guides: React.FC = () => {
     </div>
   );
 };
-

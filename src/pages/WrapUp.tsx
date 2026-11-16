@@ -1,19 +1,26 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
-import { BrandMark } from '../components/BrandMark';
-import { Check, Sparkles, RefreshCw, Users, HeartHandshake, ArrowRight } from 'lucide-react';
+import { Month2OfferCard } from '../components/Month2OfferCard';
+import { isPodsEnabled } from '../lib/pilotConfig';
+import { Sparkles, RefreshCw, Compass } from 'lucide-react';
 
 export const WrapUp: React.FC = () => {
-  const { currentRhythm, markLanded, continueWithPod, startFreshMatch } = useApp();
+  const { currentUser, currentRhythm, guidesList, markLanded, continueWithPod, startFreshMatch } =
+    useApp();
   const navigate = useNavigate();
+  const podsEnabled = isPodsEnabled();
 
   const [shareWin, setShareWin] = useState(true);
   const [selectedOption, setSelectedOption] = useState<'landed' | 'continue' | 'fresh' | null>(null);
   const [completedToast, setCompletedToast] = useState(false);
 
+  const matchedGuide =
+    guidesList.find((g) => g.profile.id === currentRhythm?.guide_id)?.profile ||
+    guidesList[0].profile;
+
   const handleLandedSubmit = () => {
-    markLanded(shareWin);
+    markLanded(podsEnabled ? shareWin : false);
     setSelectedOption('landed');
     setCompletedToast(true);
   };
@@ -33,12 +40,23 @@ export const WrapUp: React.FC = () => {
     <div className="space-y-6">
       <div className="pb-2 border-b border-[#D3DDD8] dark:border-[#2A403C]">
         <h1 className="font-heading text-2xl sm:text-3xl font-normal text-[#13231F] dark:text-[#E6EEEA]">
-          Sprint Wrap-up & Next Step
+          Week 4 Pilot Wrap-up &amp; Month 2
         </h1>
         <p className="text-xs sm:text-sm text-[#55665F] dark:text-[#A6B8B0] mt-0.5">
-          Whether you’ve completed eight weeks or landed a role early, decide what comes next.
+          Rate your 4-week pilot experience and decide whether to continue with your Career Guide for Month 2.
         </p>
       </div>
+
+      {/* Section 7 & 8: Overall Career Guide Rating & Month 2 Price Test Offer */}
+      <Month2OfferCard
+        userId={currentUser?.id || 'user-bharat-k'}
+        userName={
+          currentUser?.full_name ||
+          `${currentUser?.first_name || 'Bharat'} ${currentUser?.last_initial || 'K.'}`
+        }
+        userEmail={currentUser?.email || 'bharatk6325@gmail.com'}
+        guideName={`${matchedGuide.first_name} ${matchedGuide.last_initial}`}
+      />
 
       {completedToast ? (
         <div className="bg-[#FFFFFF] dark:bg-[#0E1E1D] border border-[#D3DDD8] dark:border-[#2A403C] rounded-2xl p-8 text-center space-y-4 shadow-xs">
@@ -51,8 +69,8 @@ export const WrapUp: React.FC = () => {
             </h2>
             <p className="text-xs sm:text-sm text-[#55665F] dark:text-[#A6B8B0] max-w-md mx-auto">
               {selectedOption === 'landed'
-                ? 'Your sprint has been marked as landed. You can continue helping others by becoming a Career Guide when you’re settled.'
-                : 'Your sessions and pod connection will remain open.'}
+                ? 'Your 4-week pilot has been marked as landed. You can help future career changers by becoming a Career Guide when you are settled.'
+                : 'Your 1:1 Career Guide connection remains active.'}
             </p>
           </div>
 
@@ -82,27 +100,29 @@ export const WrapUp: React.FC = () => {
                 <Sparkles className="w-5 h-5" />
               </div>
               <h2 className="text-base font-semibold text-[#13231F] dark:text-[#E6EEEA]">
-                I’ve landed a role
+                I&apos;ve landed a role
               </h2>
               <p className="text-xs text-[#55665F] dark:text-[#A6B8B0] leading-relaxed">
-                Celebrate quietly with your pod, complete this sprint cycle, and pay it forward as a Career Guide later.
+                Complete this 4-week pilot cycle and pay it forward as a Career Guide later.
               </p>
 
-              <label className="flex items-center gap-2 pt-2 text-xs text-[#55665F] dark:text-[#A6B8B0] cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={shareWin}
-                  onChange={(e) => setShareWin(e.target.checked)}
-                  className="rounded border-[#D3DDD8] text-[#F2B134] focus:ring-[#F2B134]"
-                />
-                <span>Post celebratory win to pod</span>
-              </label>
+              {podsEnabled && (
+                <label className="flex items-center gap-2 pt-2 text-xs text-[#55665F] dark:text-[#A6B8B0] cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={shareWin}
+                    onChange={(e) => setShareWin(e.target.checked)}
+                    className="rounded border-[#D3DDD8] text-[#F2B134] focus:ring-[#F2B134]"
+                  />
+                  <span>Post celebratory win to pod</span>
+                </label>
+              )}
             </div>
 
             <button
               type="button"
               onClick={handleLandedSubmit}
-              className="w-full py-2.5 rounded-full bg-[#102A2E] hover:bg-[#193d43] dark:bg-[#F2B134] dark:hover:bg-[#e0a32e] text-white dark:text-[#102A2E] text-xs font-semibold shadow-xs"
+              className="w-full py-2.5 rounded-full bg-[#102A2E] hover:bg-[#193d43] dark:bg-[#F2B134] dark:hover:bg-[#e0a32e] text-white dark:text-[#102A2E] text-xs font-semibold shadow-xs cursor-pointer"
             >
               Mark role landed
             </button>
@@ -112,20 +132,20 @@ export const WrapUp: React.FC = () => {
           <div className="bg-[#FFFFFF] dark:bg-[#0E1E1D] border border-[#D3DDD8] dark:border-[#2A403C] rounded-2xl p-6 flex flex-col justify-between space-y-4 shadow-xs hover:border-[#102A2E] dark:hover:border-[#2A403C] transition-colors">
             <div className="space-y-3">
               <div className="w-10 h-10 rounded-full bg-[#2F7D5B]/10 text-[#2F7D5B] dark:text-[#5FBF8F] flex items-center justify-center">
-                <Users className="w-5 h-5" />
+                <Compass className="w-5 h-5" />
               </div>
               <h2 className="text-base font-semibold text-[#13231F] dark:text-[#E6EEEA]">
-                Continue with this Career Guide & pod
+                Continue with this Career Guide
               </h2>
               <p className="text-xs text-[#55665F] dark:text-[#A6B8B0] leading-relaxed">
-                Maintain your weekly conversations and accountability rhythm with your current group.
+                Maintain your weekly 30-minute conversations and accountability rhythm with {matchedGuide.first_name}.
               </p>
             </div>
 
             <button
               type="button"
               onClick={handleContinue}
-              className="w-full py-2.5 rounded-full border border-[#102A2E] dark:border-[#F2B134] text-xs font-medium hover:bg-[#F1F5F2] dark:hover:bg-[#122523]"
+              className="w-full py-2.5 rounded-full border border-[#102A2E] dark:border-[#F2B134] text-xs font-medium hover:bg-[#F1F5F2] dark:hover:bg-[#122523] cursor-pointer"
             >
               Continue rhythm
             </button>
@@ -141,14 +161,14 @@ export const WrapUp: React.FC = () => {
                 Start a fresh match
               </h2>
               <p className="text-xs text-[#55665F] dark:text-[#A6B8B0] leading-relaxed">
-                Connect with a different Career Guide or join a new pod cohort at your current stage.
+                Connect with a different Career Guide for the next stage of your career change.
               </p>
             </div>
 
             <button
               type="button"
               onClick={handleFresh}
-              className="w-full py-2.5 rounded-full border border-[#102A2E] dark:border-[#F2B134] text-xs font-medium hover:bg-[#F1F5F2] dark:hover:bg-[#122523]"
+              className="w-full py-2.5 rounded-full border border-[#102A2E] dark:border-[#F2B134] text-xs font-medium hover:bg-[#F1F5F2] dark:hover:bg-[#122523] cursor-pointer"
             >
               Find new match
             </button>

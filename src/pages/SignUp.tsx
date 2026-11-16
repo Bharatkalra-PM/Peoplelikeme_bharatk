@@ -160,7 +160,7 @@ export const SignUp: React.FC = () => {
           <p className="text-sm text-[#55665F] dark:text-[#A6B8B0]">
             {authMode === 'signin'
               ? 'Sign in with your email and password to pick up right where you left off.'
-              : 'Create your personal account to get matched with a Career Guide and peer pod.'}
+              : 'Create your personal account to get matched one-on-one with a Career Guide.'}
           </p>
         </div>
 
@@ -400,7 +400,7 @@ export const SignUp: React.FC = () => {
         </div>
 
         <p className="text-[11px] text-center text-[#55665F] dark:text-[#A6B8B0] leading-relaxed">
-          Privacy by default. Contact details are never shared with Career Guides or pods without your explicit toggle.
+          Privacy by default. Contact details are never shared with Career Guides without your explicit toggle.
         </p>
       </main>
 

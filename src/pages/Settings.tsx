@@ -1,17 +1,12 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { ApiKeysInfoModal } from '../components/ApiKeysInfoModal';
+import { isPodsEnabled } from '../lib/pilotConfig';
 import {
   Shield,
   Download,
   Trash2,
-  Lock,
-  Eye,
-  EyeOff,
-  Bell,
-  HeartHandshake,
   Check,
-  AlertTriangle,
 } from 'lucide-react';
 
 export const Settings: React.FC = () => {
@@ -22,10 +17,12 @@ export const Settings: React.FC = () => {
     deleteAccount,
   } = useApp();
 
+  const podsEnabled = isPodsEnabled();
   const [shareGuide, setShareGuide] = useState(currentUser?.share_contact_with_guide || false);
   const [sharePod, setSharePod] = useState(currentUser?.share_contact_with_pod || false);
   const [saveToast, setSaveToast] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [showApiKeysModal, setShowApiKeysModal] = useState(false);
 
   const handleSavePrivacy = () => {
     updateContactSettings(shareGuide, sharePod);
@@ -46,20 +43,17 @@ export const Settings: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
-  const [showApiKeysModal, setShowApiKeysModal] = useState(false);
-
   return (
     <div className="space-y-6 max-w-2xl">
       <div className="flex items-center justify-between pb-2 border-b border-[#D3DDD8] dark:border-[#2A403C]">
         <div>
           <h1 className="font-heading text-2xl sm:text-3xl font-normal text-[#13231F] dark:text-[#E6EEEA]">
-            Privacy & Account Settings
+            Privacy &amp; Account Settings
           </h1>
           <p className="text-xs sm:text-sm text-[#55665F] dark:text-[#A6B8B0] mt-0.5">
             Privacy by default. You control exactly who sees your contact details.
           </p>
         </div>
-        
       </div>
 
       <ApiKeysInfoModal isOpen={showApiKeysModal} onClose={() => setShowApiKeysModal(false)} />
@@ -73,7 +67,7 @@ export const Settings: React.FC = () => {
           </h2>
         </div>
         <p className="text-xs text-[#55665F] dark:text-[#A6B8B0]">
-          By default, peers and Career Guides only see your first name and last initial. You can choose to share your email and full name.
+          By default, Career Guides only see your first name and last initial. You can choose to share your email and full name.
         </p>
 
         <div className="space-y-3 pt-2">
@@ -94,22 +88,24 @@ export const Settings: React.FC = () => {
             />
           </label>
 
-          <label className="flex items-center justify-between p-3 rounded-xl border border-[#D3DDD8]/60 dark:border-[#2A403C] cursor-pointer hover:bg-[#F1F5F2]/40 dark:hover:bg-[#122523]/40">
-            <div>
-              <p className="text-xs font-medium text-[#13231F] dark:text-[#E6EEEA]">
-                Share contact details with Pod members
-              </p>
-              <p className="text-[11px] text-[#55665F] dark:text-[#A6B8B0]">
-                Allows your 5 pod peers to see your email address.
-              </p>
-            </div>
-            <input
-              type="checkbox"
-              checked={sharePod}
-              onChange={(e) => setSharePod(e.target.checked)}
-              className="rounded border-[#D3DDD8] text-[#F2B134] focus:ring-[#F2B134] w-4 h-4"
-            />
-          </label>
+          {podsEnabled && (
+            <label className="flex items-center justify-between p-3 rounded-xl border border-[#D3DDD8]/60 dark:border-[#2A403C] cursor-pointer hover:bg-[#F1F5F2]/40 dark:hover:bg-[#122523]/40">
+              <div>
+                <p className="text-xs font-medium text-[#13231F] dark:text-[#E6EEEA]">
+                  Share contact details with Pod members
+                </p>
+                <p className="text-[11px] text-[#55665F] dark:text-[#A6B8B0]">
+                  Allows your pod peers to see your email address.
+                </p>
+              </div>
+              <input
+                type="checkbox"
+                checked={sharePod}
+                onChange={(e) => setSharePod(e.target.checked)}
+                className="rounded border-[#D3DDD8] text-[#F2B134] focus:ring-[#F2B134] w-4 h-4"
+              />
+            </label>
+          )}
         </div>
 
         <div className="flex items-center justify-between pt-2">
@@ -125,7 +121,7 @@ export const Settings: React.FC = () => {
           <button
             type="button"
             onClick={handleSavePrivacy}
-            className="px-5 py-2 rounded-full bg-[#102A2E] hover:bg-[#193d43] dark:bg-[#F2B134] dark:hover:bg-[#e0a32e] text-white dark:text-[#102A2E] text-xs font-medium transition-colors shadow-xs"
+            className="px-5 py-2 rounded-full bg-[#102A2E] hover:bg-[#193d43] dark:bg-[#F2B134] dark:hover:bg-[#e0a32e] text-white dark:text-[#102A2E] text-xs font-medium transition-colors shadow-xs cursor-pointer"
           >
             Save preferences
           </button>
@@ -135,7 +131,7 @@ export const Settings: React.FC = () => {
       {/* Data Export & Deletion */}
       <section className="bg-[#FFFFFF] dark:bg-[#0E1E1D] border border-[#D3DDD8] dark:border-[#2A403C] rounded-2xl p-6 space-y-4 shadow-xs">
         <h2 className="text-sm font-semibold text-[#13231F] dark:text-[#E6EEEA]">
-          Data Ownership & Portability
+          Data Ownership &amp; Portability
         </h2>
         <p className="text-xs text-[#55665F] dark:text-[#A6B8B0]">
           Export your complete archive or permanently delete your account in accordance with data protection regulations.
@@ -145,7 +141,7 @@ export const Settings: React.FC = () => {
           <button
             type="button"
             onClick={handleDownload}
-            className="px-5 py-2.5 rounded-full border border-[#D3DDD8] dark:border-[#2A403C] hover:bg-[#F1F5F2] dark:hover:bg-[#122523] text-xs font-medium flex items-center justify-center gap-2"
+            className="px-5 py-2.5 rounded-full border border-[#D3DDD8] dark:border-[#2A403C] hover:bg-[#F1F5F2] dark:hover:bg-[#122523] text-xs font-medium flex items-center justify-center gap-2 cursor-pointer"
           >
             <Download className="w-3.5 h-3.5" />
             <span>Download my data (JSON)</span>
@@ -155,24 +151,24 @@ export const Settings: React.FC = () => {
             <button
               type="button"
               onClick={() => setConfirmDelete(true)}
-              className="px-5 py-2.5 rounded-full border border-[#A8432C]/30 text-[#A8432C] dark:text-[#E58C73] hover:bg-[#A8432C]/10 text-xs font-medium flex items-center justify-center gap-2"
+              className="px-5 py-2.5 rounded-full border border-[#A8432C]/30 text-[#A8432C] dark:text-[#E58C73] hover:bg-[#A8432C]/10 text-xs font-medium flex items-center justify-center gap-2 cursor-pointer"
             >
               <Trash2 className="w-3.5 h-3.5" />
-              <span>Delete account & data</span>
+              <span>Delete account &amp; data</span>
             </button>
           ) : (
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={deleteAccount}
-                className="px-4 py-2 rounded-full bg-[#A8432C] text-white text-xs font-medium hover:bg-[#8e3825]"
+                className="px-4 py-2 rounded-full bg-[#A8432C] text-white text-xs font-medium hover:bg-[#8e3825] cursor-pointer"
               >
                 Yes, delete everything
               </button>
               <button
                 type="button"
                 onClick={() => setConfirmDelete(false)}
-                className="px-3 py-2 rounded-full border border-[#D3DDD8] dark:border-[#2A403C] text-xs"
+                className="px-3 py-2 rounded-full border border-[#D3DDD8] dark:border-[#2A403C] text-xs cursor-pointer"
               >
                 Cancel
               </button>
@@ -181,7 +177,7 @@ export const Settings: React.FC = () => {
         </div>
       </section>
 
-      {/* Privacy Principles (Section 11) */}
+      {/* Privacy Principles */}
       <section className="bg-[#FFFFFF] dark:bg-[#0E1E1D] border border-[#D3DDD8] dark:border-[#2A403C] rounded-2xl p-6 space-y-3 shadow-xs text-xs">
         <h2 className="text-sm font-semibold text-[#13231F] dark:text-[#E6EEEA]">
           Our Privacy Charter
